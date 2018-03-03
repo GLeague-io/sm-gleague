@@ -1,17 +1,3 @@
-
-stock Handle:MySQL_Connect()
-{
-	new String:error[256];
-
-	db = SQL_Connect("gleague", true, error, sizeof(error));
-	if(db == INVALID_HANDLE){
-	    SetFailState("Can't connect to database");
-	}
-
-	return db;
-}
-
-
 /*********************************************************
  *  prints to server's console all player's steam ids
  * 
@@ -35,13 +21,13 @@ stock ShowPlayersSteamIDs(String:players[PLAYERSCOUNT][32])
  *********************************************************/
 stock SetMatchID()
 {
-	match_id = GetCommandLineParamInt("match_id", -1);
-	if(match_id == -1)
+	MatchID = GetCommandLineParamInt("match_id", -1);
+	if(MatchID == -1)
 	{
 	    SetFailState("Can't fetch matchId from commandline");
 	}
 
-	return match_id;
+	return MatchID;
 }
 
 /*********************************************************
@@ -51,16 +37,16 @@ stock SetMatchID()
  * @param  MatchID			integer
  * @return PlayersSteamIDs 	strings array
  *********************************************************/
-stock String:GetPlayersSteamIDs(Handle:database, int matchId)
+stock String:GetMatchSteamIDs()
 {
 	DBResultSet teamsQuery, playersQuery;
 	char query[256], player_steam_id[32];
 	int player_id;
 
-	Format(query,sizeof(query), "SELECT `player_id` FROM `teams` WHERE `match_id` = '%i'", matchId);
-	teamsQuery = SQL_Query(database, query);
+	Format(query,sizeof(query), "SELECT `player_id` FROM `teams` WHERE `match_id` = '%i'", MatchID);
+	teamsQuery = SQL_Query(db, query);
 	if(teamsQuery == null){
-		SetFailState("Can't fetch data from `teams` where `match_id` = %i", matchId);
+		SetFailState("Can't fetch data from `teams` where `match_id` = %i", MatchID);
 	}
 
 	for(int i = 0; i <= PLAYERSCOUNT - 1; i++){
@@ -71,10 +57,10 @@ stock String:GetPlayersSteamIDs(Handle:database, int matchId)
 		player_id = SQL_FetchInt(teamsQuery, 0);
 
 		Format(query,sizeof(query), "SELECT `steamId` FROM `players` WHERE `id` = '%i'", player_id);
-		playersQuery = SQL_Query(database, query);
+		playersQuery = SQL_Query(db, query);
 
 		if(playersQuery == null){
-    		SetFailState("Can't fetch data from `players` where `id` = %i", matchId);
+    		SetFailState("Can't fetch data from `players` where `id` = %i", MatchID);
     	}
 
 		if(!SQL_FetchRow(playersQuery)){
@@ -85,10 +71,10 @@ stock String:GetPlayersSteamIDs(Handle:database, int matchId)
 			SetFailState("Can't fetch steam_id string from `players` where `id` = ", player_id);
 		}
 
-		players_steam_ids[i] = player_steam_id;
+		Match_SteamIDs[i] = player_steam_id;
     }
 
-	return players_steam_ids;
+	return Match_SteamIDs;
 }
 
 /*********************************************************
@@ -101,7 +87,7 @@ public bool:FindSteamID(const char[] steam_id)
 {
 	for(int i = 0; i <= PLAYERSCOUNT - 1; i++)
 	{
-		if(StrEqual(players_steam_ids[i], steam_id)){
+		if(StrEqual(Match_SteamIDs[i], steam_id)){
 			return true;
 		}
 	}
@@ -169,37 +155,6 @@ public Action:RespawnPlayer(Handle:timer, int client)
 }
 
 /*********************************************************
- *  updates match status in database
- * 
- * @param  Database			timer handle
- * @param  MatchID			integer
- * @param  Status			string message
- * @noreturn
- *********************************************************/
-stock UpdateMatchStatus(Handle:database, int match, char[] status)
-{
-	char query[256];
-	Format(query,sizeof(query), "UPDATE `matches` SET `status` = '%s' WHERE `match_id` = '%i'",status, match);
-	SQL_Query(database, query);
-}
-
-/*********************************************************
- *  updates player status in database
- * 
- * @param  Database			timer handle
- * @param  MatchID			integer
- * @param  SteamID			string
- * @param  Status			string message
- * @noreturn
- *********************************************************/
-stock UpdatePlayerStatus(Handle:database, int match, const char[] steam_id, char[] status)
-{
-	char query[256];
-	Format(query,sizeof(query), "UPDATE `teams` SET `status` = '%s' WHERE `match_id` = '%i' AND `player_id` = (SELECT `id` FROM `players` WHERE `steamId` = '%s')",status, match, steam_id);
-	SQL_Query(database, query);
-}
-
-/*********************************************************
  *  set client name from database if differs with current
  *
  * @param  Database			timer handle
@@ -222,6 +177,8 @@ stock SetPlayerName(Handle:database, int client, const char[] steam_id)
 		SetFailState("Can't fetch String `nickname` from `players` where `steamId` = '%s'", steam_id);		
 	}
 
+	Players_Names[client] = real_nickname;
+	
 	GetClientName(client, current_nickname, sizeof(current_nickname));
 
 	if(!StrEqual(real_nickname, current_nickname)){

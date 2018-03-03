@@ -103,9 +103,9 @@ public OnClientAuthorized(int client, const char[] steam_id)
  *********************************************************/
 public Action:Event_Player_Full_Connect(Handle:event, const String:name[], bool:dontBroadcast)
 {
-	int team_id;
+	int TeamID;
 	int client = GetClientOfUserId(GetEventInt(event, "userid"));
-	new Handle:datapack;
+	new Handle:Datapack;
 
 	if(IsFakeClient(client)) {return;}
 
@@ -113,13 +113,13 @@ public Action:Event_Player_Full_Connect(Handle:event, const String:name[], bool:
 
 	SetPlayerName(db, client, Players_SteamIDs[client]);
 
-	team_id = GetPlayerTeamID(db, Players_SteamIDs[client]);
+	TeamID = GetPlayerTeamID(db, Players_SteamIDs[client]);
 
-	CreateDataTimer(1.0, AssignPlayerTeam, datapack);
-	WritePackCell(datapack, client);
-	WritePackCell(datapack, team_id);
+	CreateDataTimer(1.0, AssignPlayerTeam, Datapack);
+	WritePackCell(Datapack, client);
+	WritePackCell(Datapack, TeamID);
 
-	if(DEBUG){ PrintToServer("[Team ID] (%s) > %i",Players_SteamIDs[client], team_id); } //Debug info
+	if(DEBUG){ PrintToServer("[Team ID] (%s) > %i",Players_SteamIDs[client], TeamID); } //Debug info
 
 	Players_Connected[client] = true;
 	Players_TotalConnected++; //increase connected players count
@@ -149,10 +149,14 @@ public Action:Event_Player_Full_Connect(Handle:event, const String:name[], bool:
 public Event_Player_Name(Handle:event, const String:name[], bool:dontBroadcast)
 {
 	int client = GetClientOfUserId(GetEventInt(event, "userid"));
+	new String:NewName[32];
 
 	if(IsFakeClient(client)) {return;}
+	GetEventString(event, "newname", NewName, sizeof(NewName));
 
-	SetClientInfo(client, "name", Players_Names[client]);
+	if(!StrEqual(NewName, Players_Names[client])){
+		SetClientInfo(client, "name", Players_Names[client]);
+	}
 }
 
 /*********************************************************
@@ -166,18 +170,18 @@ public Event_Player_Name(Handle:event, const String:name[], bool:dontBroadcast)
 public Event_Player_Team(Handle:event, const String:name[], bool:dontBroadcast)
 {
 	int client = GetClientOfUserId(GetEventInt(event, "userid"));
-	new Handle:datapack;
+	new Handle:Datapack;
 
-	if(IsFakeClient(client) || !IsClientInGame(client)){return;}
+	if(IsFakeClient(client) || !IsClientInGame(client) || !Players_Connected[client]){return;}
 
 
-	new needle_team_id = GetPlayerTeamID(db, Players_SteamIDs[client]);
-	new new_team_id = GetEventInt(event, "team");
+	new Needle_TeamID = GetPlayerTeamID(db, Players_SteamIDs[client]);
+	new New_TeamID = GetEventInt(event, "team");
 
-	if(needle_team_id != new_team_id){
-		CreateDataTimer(1.0, AssignPlayerTeam, datapack);
-		WritePackCell(datapack, client);
-		WritePackCell(datapack, needle_team_id);
+	if(Needle_TeamID != New_TeamID){
+		CreateDataTimer(1.0, AssignPlayerTeam, Datapack);
+		WritePackCell(Datapack, client);
+		WritePackCell(Datapack, Needle_TeamID);
 	}
 
 	
@@ -190,8 +194,10 @@ public Event_Player_Team(Handle:event, const String:name[], bool:dontBroadcast)
  *********************************************************/
 public OnClientDisconnect(int client)
 {
-	char steam_id[256];
 	if(IsFakeClient(client) || !Players_Connected[client]) {return;}
+
+	UpdatePlayerStatus(db, MatchID, Players_SteamIDs[client], "disconnected");
+	if(DEBUG){PrintToServer("[DB] (%s)> UpdatePlayerStatus > disconnected",Players_SteamIDs[client]);} //Debug info
 
 	Players_Names[client] = "";
 	Players_SteamIDs[client] = "";
@@ -199,7 +205,4 @@ public OnClientDisconnect(int client)
 	Players_TotalConnected--;
 
 	if(DEBUG){PrintToServer("[Players] > Connected: %i", Players_TotalConnected);} //Debug info
-
-	UpdatePlayerStatus(db, MatchID, Players_SteamIDs[client], "disconnected");
-	if(DEBUG){PrintToServer("[DB] (%s)> UpdatePlayerStatus > disconnected",steam_id);} //Debug info
 }

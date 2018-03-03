@@ -1,0 +1,14 @@
+"Phrases"
+{
+	"NoAccess"
+	{
+		"en"		"You don't have access to this match [gleague.io] "
+		"ru"		"У вас нет доступа к данному матчу [gleague.io] "
+	}
+
+	"BadSteamAuth"
+	{
+		"en"		"Can't get SteamID"
+		"ru"		"Не удалось получить SteamID"
+	}
+}

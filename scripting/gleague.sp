@@ -44,7 +44,7 @@ public Plugin myinfo =
 {
     name = "GLeague MM",
     author = "Stanislav 'glmn' Gelman",
-    description = "An additional cs:go matchmaking system with own rankings by 'glmn'. From Russian to Russians w/ love :)",
+    description = "An additional cs:go matchmaking system with own rankings by 'glmn'. From Russian for Russians w/ love :)",
     version = VERSION,
     url = "http://gleague.io/"
 };

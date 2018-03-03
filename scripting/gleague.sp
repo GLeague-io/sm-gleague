@@ -3,6 +3,8 @@
 #define PLAYERSCOUNT 2
 #define DEFAULT_LANGUAGE 22
 #define VERSION "0.0.1prealpha"
+#define STEAMID_SIZE 32
+#define NICKNAME_SIZE 32
 
 /* include assist scripts */
 #include <sourcemod>
@@ -15,22 +17,24 @@ new bool:DEBUG = true;
 /* database handler */
 new Handle:db = INVALID_HANDLE;
 
-/* set default match id */
-int match_id = -1;
+int MatchID = -1;
 
 /* players data storage */
-new String:players_steam_ids[PLAYERSCOUNT][32];
-new String:players_names[PLAYERSCOUNT][32];
-
-/* flags */
-bool flag_warmup = true; 				//warmup
-bool flag_live = false; 				//match live
-bool flag_knife_round = false; 			//knife round
-bool flag_knife_round_started = false; 	//knife round started
-bool flag_all_connected = false; 		//all connected
+new String:Match_SteamIDs[PLAYERSCOUNT][STEAMID_SIZE];
+new String:Players_SteamIDs[PLAYERSCOUNT][STEAMID_SIZE];
+new String:Players_Names[PLAYERSCOUNT][NICKNAME_SIZE];
+new bool:Players_Connected[PLAYERSCOUNT] = false;
+new Players_TotalConnected = 0;
 
 /* include gleague additional functions */
-#include <gleague>
+#include <gleague/enums>
+#include <gleague/mysql>
+#include <gleague/functions>
+
+/* match data */
+MatchState g_MatchState = MatchState_None;
+
+
 
 
 /*********************************************************
@@ -60,11 +64,11 @@ public OnPluginStart()
 	/* Init MySQL connection and fill variables with data */
 	MySQL_Connect();
 	SetMatchID();
-	GetPlayersSteamIDs(db, match_id);
+	GetMatchSteamIDs();
 
-	if(DEBUG){ShowPlayersSteamIDs(players_steam_ids);} //Debug info
+	if(DEBUG){ShowPlayersSteamIDs(Match_SteamIDs);} //Debug info
 
-	UpdateMatchStatus(db, match_id, "ready");
+	UpdateMatchStatus(db, MatchID, "ready");
 
 }
 
@@ -80,10 +84,11 @@ public OnClientAuthorized(int client, const char[] steam_id)
 	if(IsFakeClient(client)) {return;}
 
 	SetClientLanguage(client, DEFAULT_LANGUAGE);
+	strcopy(Players_SteamIDs[client], 32, steam_id);
 
-	if(DEBUG){PrintToServer("[Steam ID] > %s", steam_id);} //Debug info
+	if(DEBUG){PrintToServer("[Steam ID] > %s", Players_SteamIDs[client]);} //Debug info
 
-	if(!FindSteamID(steam_id)){
+	if(!FindSteamID(Players_SteamIDs[client])){
         KickClient(client, "%t", "NoAccess");
 	}
 }
@@ -98,28 +103,39 @@ public OnClientAuthorized(int client, const char[] steam_id)
  *********************************************************/
 public Action:Event_Player_Full_Connect(Handle:event, const String:name[], bool:dontBroadcast)
 {
-	char steam_id[256];
 	int team_id;
 	int client = GetClientOfUserId(GetEventInt(event, "userid"));
 	new Handle:datapack;
 
 	if(IsFakeClient(client)) {return;}
-	GetClientAuthId(client, AuthId_Steam2, steam_id, sizeof(steam_id));
 
-	if(DEBUG){PrintToServer("[Event] (%s) > Event_Player_Full_Connect", steam_id);} //Debug info
+	if(DEBUG){PrintToServer("[Event] (%s) > Event_Player_Full_Connect", Players_SteamIDs[client]);} //Debug info
 
-	SetPlayerName(db, client, steam_id);
+	SetPlayerName(db, client, Players_SteamIDs[client]);
 
-	team_id = GetPlayerTeamID(db, steam_id);
+	team_id = GetPlayerTeamID(db, Players_SteamIDs[client]);
 
 	CreateDataTimer(1.0, AssignPlayerTeam, datapack);
 	WritePackCell(datapack, client);
 	WritePackCell(datapack, team_id);
 
-	if(DEBUG){ PrintToServer("[Team ID] (%s) > %i",steam_id, team_id); } //Debug info
+	if(DEBUG){ PrintToServer("[Team ID] (%s) > %i",Players_SteamIDs[client], team_id); } //Debug info
 
-	UpdatePlayerStatus(db, match_id, steam_id, "connected");
-	if(DEBUG){PrintToServer("[DB] (%s) > UpdatePlayerStatus > connected", steam_id);} //Debug info
+	Players_Connected[client] = true;
+	Players_TotalConnected++; //increase connected players count
+
+	if(DEBUG){PrintToServer("[Players] > Connected: %i", Players_TotalConnected);} //Debug info
+
+	UpdatePlayerStatus(db, MatchID, Players_SteamIDs[client], "connected");
+
+	if(DEBUG){PrintToServer("[DB] (%s) > UpdatePlayerStatus > connected", Players_SteamIDs[client]);} //Debug info
+
+	if(DEBUG){ PrintToServer("[Match State] > %s",g_MatchState); } //Debug info
+	if(Players_TotalConnected > 0 && Players_TotalConnected < PLAYERSCOUNT && g_MatchState == MatchState_None)
+	{
+		g_MatchState = MatchState_Warmup;
+		if(DEBUG){ PrintToServer("[Match State] > %s",g_MatchState); } //Debug info
+	}
 }
 
 /*********************************************************
@@ -132,13 +148,11 @@ public Action:Event_Player_Full_Connect(Handle:event, const String:name[], bool:
  *********************************************************/
 public Event_Player_Name(Handle:event, const String:name[], bool:dontBroadcast)
 {
-	char steam_id[256];
 	int client = GetClientOfUserId(GetEventInt(event, "userid"));
-	
+
 	if(IsFakeClient(client)) {return;}
 
-	GetClientAuthId(client, AuthId_Steam2, steam_id, sizeof(steam_id));
-	SetPlayerName(db, client, steam_id);
+	SetClientInfo(client, "name", Players_Names[client]);
 }
 
 /*********************************************************
@@ -151,16 +165,13 @@ public Event_Player_Name(Handle:event, const String:name[], bool:dontBroadcast)
  *********************************************************/
 public Event_Player_Team(Handle:event, const String:name[], bool:dontBroadcast)
 {
-	char steam_id[256];
 	int client = GetClientOfUserId(GetEventInt(event, "userid"));
 	new Handle:datapack;
 
 	if(IsFakeClient(client) || !IsClientInGame(client)){return;}
 
-	GetClientAuthId(client, AuthId_Steam2, steam_id, sizeof(steam_id));
 
-	new needle_team_id = GetPlayerTeamID(db, steam_id);
-	new old_team_id = GetEventInt(event, "oldteam");
+	new needle_team_id = GetPlayerTeamID(db, Players_SteamIDs[client]);
 	new new_team_id = GetEventInt(event, "team");
 
 	if(needle_team_id != new_team_id){
@@ -180,10 +191,15 @@ public Event_Player_Team(Handle:event, const String:name[], bool:dontBroadcast)
 public OnClientDisconnect(int client)
 {
 	char steam_id[256];
-	if(IsFakeClient(client)) {return;}
+	if(IsFakeClient(client) || !Players_Connected[client]) {return;}
 
-	GetClientAuthId(client, AuthId_Steam2, steam_id, sizeof(steam_id));
+	Players_Names[client] = "";
+	Players_SteamIDs[client] = "";
+	Players_Connected[client] = false;
+	Players_TotalConnected--;
 
-	UpdatePlayerStatus(db, match_id, steam_id, "disconnected");
+	if(DEBUG){PrintToServer("[Players] > Connected: %i", Players_TotalConnected);} //Debug info
+
+	UpdatePlayerStatus(db, MatchID, Players_SteamIDs[client], "disconnected");
 	if(DEBUG){PrintToServer("[DB] (%s)> UpdatePlayerStatus > disconnected",steam_id);} //Debug info
 }

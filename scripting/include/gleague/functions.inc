@@ -46,32 +46,32 @@ stock String:GetMatchSteamIDs()
   Format(query,sizeof(query), "SELECT `player_id` FROM `teams` WHERE `match_id` = '%i'", MatchID);
   teamsQuery = SQL_Query(db, query);
   if(teamsQuery == null){
-  	SetFailState("Can't fetch data from `teams` where `match_id` = %i", MatchID);
+    SetFailState("Can't fetch data from `teams` where `match_id` = %i", MatchID);
   }
 
   for(int i = 0; i <= PLAYERSCOUNT - 1; i++){
-  	if(!SQL_FetchRow(teamsQuery)){
-  		SetFailState("Can't fetch row %i from `teams`", i);
-  	}
-
-  	player_id = SQL_FetchInt(teamsQuery, 0);
-
-  	Format(query,sizeof(query), "SELECT `steamId` FROM `players` WHERE `id` = '%i'", player_id);
-  	playersQuery = SQL_Query(db, query);
-
-  	if(playersQuery == null){
-    	SetFailState("Can't fetch data from `players` where `id` = %i", MatchID);
+    if(!SQL_FetchRow(teamsQuery)){
+      SetFailState("Can't fetch row %i from `teams`", i);
     }
 
-  	if(!SQL_FetchRow(playersQuery)){
-  		SetFailState("Can't fetch row from `players` where `id` = ", player_id);
-  	}
+    player_id = SQL_FetchInt(teamsQuery, 0);
 
-  	if(!SQL_FetchString(playersQuery, 0, player_steam_id, sizeof(player_steam_id))){
-  		SetFailState("Can't fetch steam_id string from `players` where `id` = ", player_id);
-  	}
+    Format(query,sizeof(query), "SELECT `steamId` FROM `players` WHERE `id` = '%i'", player_id);
+    playersQuery = SQL_Query(db, query);
 
-  	Match_SteamIDs[i] = player_steam_id;
+    if(playersQuery == null){
+      SetFailState("Can't fetch data from `players` where `id` = %i", MatchID);
+    }
+
+    if(!SQL_FetchRow(playersQuery)){
+      SetFailState("Can't fetch row from `players` where `id` = ", player_id);
+    }
+
+    if(!SQL_FetchString(playersQuery, 0, player_steam_id, sizeof(player_steam_id))){
+      SetFailState("Can't fetch steam_id string from `players` where `id` = ", player_id);
+    }
+
+    Match_SteamIDs[i] = player_steam_id;
   }
 
   return Match_SteamIDs;
@@ -87,9 +87,9 @@ public bool:FindSteamID(const char[] steam_id)
 {
   for(int i = 0; i <= PLAYERSCOUNT - 1; i++)
   {
-  	if(StrEqual(Match_SteamIDs[i], steam_id)){
-  		return true;
-  	}
+    if(StrEqual(Match_SteamIDs[i], steam_id)){
+      return true;
+    }
   }
   return false;
 }
@@ -111,12 +111,12 @@ public GetPlayerTeamID(Handle:database, const char[] steam_id)
   teamQuery = SQL_Query(database, query);
 
   if(teamQuery == null || !SQL_FetchRow(teamQuery)){
-  	SetFailState("Can't fetch `team_id` from `teams` using player `steamId` = %s", steam_id);
+    SetFailState("Can't fetch `team_id` from `teams` using player `steamId` = %s", steam_id);
   }
 
   team_id = SQL_FetchInt(teamQuery, 0);
   if(team_id < 2){
-  	SetFailState("Team ID can't be below 2");	
+    SetFailState("Team ID can't be below 2");	
   }
 
   return team_id;
@@ -169,11 +169,11 @@ stock SetPlayerName(Handle:database, int client, const char[] steam_id)
   nameQuery = SQL_Query(database, query);
 
   if(nameQuery == null || !SQL_FetchRow(nameQuery)){
-  	SetFailState("Can't fetch `nickname` from `players` where `steamId` = '%s'", steam_id);
+    SetFailState("Can't fetch `nickname` from `players` where `steamId` = '%s'", steam_id);
   }
 
   if(!SQL_FetchString(nameQuery, 0, real_nickname, sizeof(real_nickname))){
-  	SetFailState("Can't fetch String `nickname` from `players` where `steamId` = '%s'", steam_id);		
+    SetFailState("Can't fetch String `nickname` from `players` where `steamId` = '%s'", steam_id);		
   }
 
   Players_Names[client] = real_nickname;
@@ -181,8 +181,8 @@ stock SetPlayerName(Handle:database, int client, const char[] steam_id)
   GetClientName(client, current_nickname, sizeof(current_nickname));
 
   if(!StrEqual(real_nickname, current_nickname)){
-  	SetClientInfo(client, "name", real_nickname);
+    SetClientInfo(client, "name", real_nickname);
 
-  	if(DEBUG){ PrintToServer("[DB] (%s) > Switch nickname from '%s' to '%s'", steam_id, current_nickname, real_nickname);} //Debug info
+    if(DEBUG){ PrintToServer("[DB] (%s) > Switch nickname from '%s' to '%s'", steam_id, current_nickname, real_nickname);} //Debug info
   }
 }

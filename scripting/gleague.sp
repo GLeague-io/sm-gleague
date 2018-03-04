@@ -133,8 +133,8 @@ public Action:Event_Player_Full_Connect(Handle:event, const String:name[], bool:
   if(DEBUG){ PrintToServer("[Match State] > %s",g_MatchState); } //Debug info
   if(Players_TotalConnected > 0 && Players_TotalConnected < PLAYERSCOUNT && g_MatchState == MatchState_None)
   {
-  	g_MatchState = MatchState_Warmup;
-  	if(DEBUG){ PrintToServer("[Match State] > %s",g_MatchState); } //Debug info
+    g_MatchState = MatchState_Warmup;
+    if(DEBUG){ PrintToServer("[Match State] > %s",g_MatchState); } //Debug info
   }
 }
 
@@ -155,7 +155,7 @@ public Event_Player_Name(Handle:event, const String:name[], bool:dontBroadcast)
   GetEventString(event, "newname", NewName, sizeof(NewName));
 
   if(!StrEqual(NewName, Players_Names[client])){
-  	SetClientInfo(client, "name", Players_Names[client]);
+    SetClientInfo(client, "name", Players_Names[client]);
   }
 }
 
@@ -178,9 +178,9 @@ public Event_Player_Team(Handle:event, const String:name[], bool:dontBroadcast)
   new New_TeamID = GetEventInt(event, "team");
 
   if(Needle_TeamID != New_TeamID){
-  	CreateDataTimer(1.0, AssignPlayerTeam, Datapack);
-  	WritePackCell(Datapack, client);
-  	WritePackCell(Datapack, Needle_TeamID);
+    CreateDataTimer(1.0, AssignPlayerTeam, Datapack);
+    WritePackCell(Datapack, client);
+    WritePackCell(Datapack, Needle_TeamID);
   }
 }
 

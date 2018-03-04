@@ -24,7 +24,7 @@ stock SetMatchID()
 	MatchID = GetCommandLineParamInt("match_id", -1);
 	if(MatchID == -1)
 	{
-	    SetFailState("Can't fetch matchId from commandline");
+	  SetFailState("Can't fetch matchId from commandline");
 	}
 
 	return MatchID;
@@ -60,8 +60,8 @@ stock String:GetMatchSteamIDs()
 		playersQuery = SQL_Query(db, query);
 
 		if(playersQuery == null){
-    		SetFailState("Can't fetch data from `players` where `id` = %i", MatchID);
-    	}
+    	SetFailState("Can't fetch data from `players` where `id` = %i", MatchID);
+    }
 
 		if(!SQL_FetchRow(playersQuery)){
 			SetFailState("Can't fetch row from `players` where `id` = ", player_id);
@@ -72,7 +72,7 @@ stock String:GetMatchSteamIDs()
 		}
 
 		Match_SteamIDs[i] = player_steam_id;
-    }
+  }
 
 	return Match_SteamIDs;
 }
@@ -151,7 +151,7 @@ public Action:AssignPlayerTeam(Handle:timer, Handle:datapack)
  *********************************************************/
 public Action:RespawnPlayer(Handle:timer, int client)
 {
-    CS_RespawnPlayer(client);
+  CS_RespawnPlayer(client);
 }
 
 /*********************************************************

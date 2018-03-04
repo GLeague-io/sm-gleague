@@ -1,5 +1,5 @@
 enum MatchState {
-	MatchState_None,							// no setup has taken place
+	MatchState_None,							              // no setup has taken place
 	MatchState_Warmup,                        	// setup done, waiting for players to ready up
 	MatchState_KnifeRound,                    	// in the knife round
 	MatchState_WaitingForKnifeRoundDecision,  	// waiting for a .stay/.swap command after the knife

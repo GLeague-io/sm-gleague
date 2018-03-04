@@ -4,7 +4,7 @@ stock Handle:MySQL_Connect()
 
 	db = SQL_Connect("gleague", true, error, sizeof(error));
 	if(db == INVALID_HANDLE){
-	    SetFailState("Can't connect to database");
+	  SetFailState("Can't connect to database");
 	}
 
 	return db;

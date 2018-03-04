@@ -89,7 +89,7 @@ public OnClientAuthorized(int client, const char[] steam_id)
 	if(DEBUG){PrintToServer("[Steam ID] > %s", Players_SteamIDs[client]);} //Debug info
 
 	if(!FindSteamID(Players_SteamIDs[client])){
-        KickClient(client, "%t", "NoAccess");
+    KickClient(client, "%t", "NoAccess");
 	}
 }
 

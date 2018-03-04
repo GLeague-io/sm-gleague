@@ -60,8 +60,8 @@ stock String:GetMatchSteamIDs()
 		playersQuery = SQL_Query(db, query);
 
 		if(playersQuery == null){
-    	SetFailState("Can't fetch data from `players` where `id` = %i", MatchID);
-    }
+	  	SetFailState("Can't fetch data from `players` where `id` = %i", MatchID);
+	  }
 
 		if(!SQL_FetchRow(playersQuery)){
 			SetFailState("Can't fetch row from `players` where `id` = ", player_id);
@@ -72,7 +72,7 @@ stock String:GetMatchSteamIDs()
 		}
 
 		Match_SteamIDs[i] = player_steam_id;
-  }
+	}
 
 	return Match_SteamIDs;
 }
@@ -91,7 +91,6 @@ public bool:FindSteamID(const char[] steam_id)
 			return true;
 		}
 	}
-
 	return false;
 }
 
@@ -151,7 +150,7 @@ public Action:AssignPlayerTeam(Handle:timer, Handle:datapack)
  *********************************************************/
 public Action:RespawnPlayer(Handle:timer, int client)
 {
-  CS_RespawnPlayer(client);
+	CS_RespawnPlayer(client);
 }
 
 /*********************************************************
@@ -178,7 +177,7 @@ stock SetPlayerName(Handle:database, int client, const char[] steam_id)
 	}
 
 	Players_Names[client] = real_nickname;
-	
+
 	GetClientName(client, current_nickname, sizeof(current_nickname));
 
 	if(!StrEqual(real_nickname, current_nickname)){
@@ -186,5 +185,4 @@ stock SetPlayerName(Handle:database, int client, const char[] steam_id)
 
 		if(DEBUG){ PrintToServer("[DB] (%s) > Switch nickname from '%s' to '%s'", steam_id, current_nickname, real_nickname);} //Debug info
 	}
-
 }

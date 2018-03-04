@@ -6,7 +6,7 @@ stock Handle:MySQL_Connect()
 	if(db == INVALID_HANDLE){
 	  SetFailState("Can't connect to database");
 	}
-
+	
 	return db;
 }
 

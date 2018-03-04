@@ -174,7 +174,6 @@ public Event_Player_Team(Handle:event, const String:name[], bool:dontBroadcast)
 
   if(IsFakeClient(client) || !IsClientInGame(client) || !Players_Connected[client]){return;}
 
-
   new Needle_TeamID = GetPlayerTeamID(db, Players_SteamIDs[client]);
   new New_TeamID = GetEventInt(event, "team");
 

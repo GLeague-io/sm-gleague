@@ -258,6 +258,38 @@ public StartKnifeRound()
 
     UpdateMatchStatus(db, MatchID, "knife");
 
-    PrintToChatAll("KNIFE ROUND!");
+    PrintToChatAll(" \x01[GLeague] > \x01\x0B\x04Knife round started!");
     if(DEBUG){PrintToServer("[Knife round] initialized");} //Debug info
+}
+
+/*********************************************************
+ *  get the team index opposite to the specified team
+ * 
+ * @param  team   team index to get opposite of
+ * @return    false on error
+ *      team index
+ *********************************************************/
+
+stock GetOtherTeam(team)
+{
+  if (team == 2) {return 3;}
+  else if (team == 3){return 2;}
+  else {return false;}
+}
+
+/*********************************************************
+ *  swap all players to the opposite team
+ *  allows for skin choice
+ * 
+ * @noreturn
+ *********************************************************/
+
+stock CS_SwapTeams()
+{
+  new max_clients = GetMaxClients();
+  for (new i = 1; i <= max_clients; i++){
+    if (IsClientInGame(i) && !IsFakeClient(i) && GetClientTeam(i) > 1){
+      ChangeClientTeam(i, GetOtherTeam(GetClientTeam(i)));
+    }
+  }
 }

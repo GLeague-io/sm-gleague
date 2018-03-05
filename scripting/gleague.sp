@@ -20,10 +20,10 @@ new Handle:db = INVALID_HANDLE;
 int MatchID = -1;
 
 /* players data storage */
-new String:Match_SteamID[PLAYERSCOUNT][STEAMID_SIZE];
-new String:Player_SteamID[PLAYERSCOUNT][STEAMID_SIZE];
-new String:Player_Name[PLAYERSCOUNT][NICKNAME_SIZE];
-new bool:Player_Connected[PLAYERSCOUNT] = false;
+new String:Match_SteamID[2][STEAMID_SIZE];
+new String:Player_SteamID[10][STEAMID_SIZE];
+new String:Player_Name[10][NICKNAME_SIZE];
+new bool:Player_Connected[10] = false;
 new Players_Indexes[10];
 new Players_Connected = 0;
 new Players_TeamID[10];
@@ -34,6 +34,7 @@ new int_ClientDecisionSelector = 0;
 
 /* server cvars */
 new Handle:cvar_mp_warmuptime = INVALID_HANDLE;
+new Handle:cvar_team_name[2]  = INVALID_HANDLE;
 
 /* include gleague additional functions */
 #include <gleague/enums>
@@ -70,6 +71,11 @@ public OnPluginStart()
   LoadTranslations("gleague.phrases.txt");
 
   cvar_mp_warmuptime = FindConVar("mp_warmuptime");
+  cvar_team_name[0] = FindConVar("mp_teamname_2");
+  cvar_team_name[1] = FindConVar("mp_teamname_1");
+
+  SetConVarString(cvar_team_name[0], "AVA Gaming");
+  SetConVarString(cvar_team_name[1], "Natus Vincere");
 
   /* Player event hooks */
   HookEvent("player_connect_full", Event_Player_Full_Connect, EventHookMode_Post);
@@ -155,7 +161,7 @@ public Action:Event_Player_Full_Connect(Handle:event, const String:name[], bool:
     ChangeState(MatchState_Warmup);
   }
 
-  if(Players_Connected == 1 && enum_MatchState == MatchState_Warmup)
+  if(Players_Connected == PLAYERSCOUNT && enum_MatchState == MatchState_Warmup)
   {
     SetWarmupTime(10);
     ChangeState(MatchState_KnifeRound);
@@ -225,10 +231,18 @@ public Action Event_Round_Start(Event event, const char[] name, bool dontBroadca
 public Event_Round_End(Handle:event, const String:name[], bool:dontBroadcast)
 {
   new Winner = GetEventInt(event, "winner");
+  char Winner_TeamName[32];
+
+  if(Winner < 2) {return;}
+
+  GetConVarString(cvar_team_name[Winner-2], Winner_TeamName, sizeof(Winner_TeamName));
+
   if(enum_MatchState == MatchState_KnifeRound && bool_HasKnifeRoundStarted){
     bool_HasKnifeRoundStarted = false;
     bool_PendingSwitchDecision = true;
     int_ClientDecisionSelector = Players_BelongsToTeam[Winner-2][0];
+
+    PrintToChatAll(" \x01[GLeague] > \x01\x0B\x04\"%s\" win knife round!", Winner_TeamName);
 
     ChangeState(MatchState_WaitingForKnifeRoundDecision);
     ServerCommand("mp_warmup_start");
@@ -248,6 +262,7 @@ public Event_Player_Say(Handle:event, const String:name[], bool:dontBroadcast)
     }
     else if(StrEqual(text,"!switch")){
       PrintToChatAll("Switching teams!");
+      CS_SwapTeams();
     }
     UnhookEvent("player_say", Event_Player_Say);
   }

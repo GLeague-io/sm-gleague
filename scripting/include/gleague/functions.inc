@@ -101,25 +101,34 @@ public bool:FindSteamID(const char[] steam_id)
  * @param  SteamID			string
  * @return TeamID 			integer
  *********************************************************/
-public GetPlayerTeamID(Handle:database, const char[] steam_id)
+public SetPlayerData(Handle:database, int client, const char[] steam_id)
 {
   DBResultSet teamQuery;
   char query[256];
-  int team_id;
+  int TeamID;
+  int PlayerIndex = -1;
 
-  Format(query,sizeof(query), "SELECT `team_id` FROM `teams` WHERE player_id = (SELECT `id` FROM `players` WHERE `steamId` = '%s'); ", steam_id);
+  Format(query,sizeof(query), "SELECT `team_id`,`player_index` FROM `teams` WHERE player_id = (SELECT `id` FROM `players` WHERE `steamId` = '%s'); ", steam_id);
   teamQuery = SQL_Query(database, query);
 
   if(teamQuery == null || !SQL_FetchRow(teamQuery)){
     SetFailState("Can't fetch `team_id` from `teams` using player `steamId` = %s", steam_id);
   }
 
-  team_id = SQL_FetchInt(teamQuery, 0);
-  if(team_id < 2){
+  TeamID = SQL_FetchInt(teamQuery, 0);
+  PlayerIndex = SQL_FetchInt(teamQuery, 1) - 1;
+  PrintToServer("PlayerIndex = %i", PlayerIndex);
+  if(TeamID < 2){
     SetFailState("Team ID can't be below 2");	
   }
 
-  return team_id;
+  if(PlayerIndex == -1){
+    SetFailState("PlayerIndex must be equal or above 0"); 
+  }
+
+  Players_InTeam[client] = TeamID;
+  Players_Indexes[client] = PlayerIndex;
+  Players_Teams[TeamID-2][PlayerIndex] = client;
 }
 
 /*********************************************************
@@ -185,4 +194,70 @@ stock SetPlayerName(Handle:database, int client, const char[] steam_id)
 
     if(DEBUG){ PrintToServer("[DB] (%s) > Switch nickname from '%s' to '%s'", steam_id, current_nickname, real_nickname);} //Debug info
   }
+}
+
+stock SetWarmupTime(int time)
+{
+    SetConVarInt(g_cvar_mp_warmuptime, time);
+}
+
+stock bool:IsWarmup()
+{
+  if (GameRules_GetProp("m_bWarmupPeriod") == 0) {
+      return false;
+  }
+  return true;
+}
+
+/*********************************************************
+ *  Equip the specified client with the knife
+ * 
+ * @noreturn
+ *********************************************************/
+
+stock CS_EquipKnife(client)
+{
+  ClientCommand(client, "slot3");
+}
+
+/*********************************************************
+ *  strip all weapons from specified client but the knife
+ * 
+ * @noreturn
+ *********************************************************/
+
+stock CS_StripButKnife(client, bool:equip=true)
+{
+  if (!IsClientInGame(client) || GetClientTeam(client) <= 1) {
+    return false;
+  }
+  
+  new item_index;
+
+  for (new i = 0; i < 5; i++){
+    if (i == 2){ continue; }
+    if ((item_index = GetPlayerWeaponSlot(client, i)) != -1){
+      RemovePlayerItem(client, item_index);
+    }
+    if (equip){
+      CS_EquipKnife(client);
+    }
+  }
+  return true;
+}
+
+public StartKnifeRound()
+{   
+    for (new i = 1; i <= PLAYERSCOUNT; i++)
+    {
+      if (IsClientInGame(i) && GetClientTeam(i) > 1)
+      {
+        CS_StripButKnife(i);
+      }
+    }
+
+    UpdateMatchStatus(db, MatchID, "knife");
+
+    PrintToChatAll("KNIFE ROUND!");
+    if(DEBUG){PrintToServer("[Knife round] initialized");} //Debug info
 }

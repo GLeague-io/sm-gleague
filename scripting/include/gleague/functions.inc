@@ -71,10 +71,10 @@ stock String:GetMatchSteamIDs()
       SetFailState("Can't fetch steam_id string from `players` where `id` = ", player_id);
     }
 
-    Match_SteamIDs[i] = player_steam_id;
+    Match_SteamID[i] = player_steam_id;
   }
 
-  return Match_SteamIDs;
+  return Match_SteamID;
 }
 
 /*********************************************************
@@ -87,7 +87,7 @@ public bool:FindSteamID(const char[] steam_id)
 {
   for(int i = 0; i <= PLAYERSCOUNT - 1; i++)
   {
-    if(StrEqual(Match_SteamIDs[i], steam_id)){
+    if(StrEqual(Match_SteamID[i], steam_id)){
       return true;
     }
   }
@@ -126,9 +126,9 @@ public SetPlayerData(Handle:database, int client, const char[] steam_id)
     SetFailState("PlayerIndex must be equal or above 0"); 
   }
 
-  Players_InTeam[client] = TeamID;
+  Players_TeamID[client] = TeamID;
   Players_Indexes[client] = PlayerIndex;
-  Players_Teams[TeamID-2][PlayerIndex] = client;
+  Players_BelongsToTeam[TeamID-2][PlayerIndex] = client;
 }
 
 /*********************************************************
@@ -185,7 +185,7 @@ stock SetPlayerName(Handle:database, int client, const char[] steam_id)
     SetFailState("Can't fetch String `nickname` from `players` where `steamId` = '%s'", steam_id);		
   }
 
-  Players_Names[client] = real_nickname;
+  Player_Name[client] = real_nickname;
 
   GetClientName(client, current_nickname, sizeof(current_nickname));
 
@@ -198,7 +198,7 @@ stock SetPlayerName(Handle:database, int client, const char[] steam_id)
 
 stock SetWarmupTime(int time)
 {
-    SetConVarInt(g_cvar_mp_warmuptime, time);
+    SetConVarInt(cvar_mp_warmuptime, time);
 }
 
 stock bool:IsWarmup()

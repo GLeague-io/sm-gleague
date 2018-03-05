@@ -20,19 +20,20 @@ new Handle:db = INVALID_HANDLE;
 int MatchID = -1;
 
 /* players data storage */
-new String:Match_SteamIDs[PLAYERSCOUNT][STEAMID_SIZE];
-new String:Players_SteamIDs[PLAYERSCOUNT][STEAMID_SIZE];
-new String:Players_Names[PLAYERSCOUNT][NICKNAME_SIZE];
-new bool:Players_Connected[PLAYERSCOUNT] = false;
+new String:Match_SteamID[PLAYERSCOUNT][STEAMID_SIZE];
+new String:Player_SteamID[PLAYERSCOUNT][STEAMID_SIZE];
+new String:Player_Name[PLAYERSCOUNT][NICKNAME_SIZE];
+new bool:Player_Connected[PLAYERSCOUNT] = false;
 new Players_Indexes[10];
-new Players_TotalConnected = 0;
-new Players_InTeam[10];
-new Players_Teams[2][10];
-new i_CaptainClientID = 0;
+new Players_Connected = 0;
+new Players_TeamID[10];
+new Players_BelongsToTeam[2][10];
+
+new int_ClientDecisionSelector = 0;
 
 
 /* server cvars */
-new Handle:g_cvar_mp_warmuptime = INVALID_HANDLE;
+new Handle:cvar_mp_warmuptime = INVALID_HANDLE;
 
 /* include gleague additional functions */
 #include <gleague/enums>
@@ -41,9 +42,9 @@ new Handle:g_cvar_mp_warmuptime = INVALID_HANDLE;
 
 
 /* match data */
-MatchState g_MatchState = MatchState_None;
-bool g_HasKnifeRoundStarted = false;
-bool g_PendingSwitchDecesion = false;
+MatchState enum_MatchState = MatchState_None;
+bool bool_HasKnifeRoundStarted = false;
+bool bool_PendingSwitchDecision = false;
 
 
 
@@ -68,7 +69,7 @@ public OnPluginStart()
 {
   LoadTranslations("gleague.phrases.txt");
 
-  g_cvar_mp_warmuptime = FindConVar("mp_warmuptime");
+  cvar_mp_warmuptime = FindConVar("mp_warmuptime");
 
   /* Player event hooks */
   HookEvent("player_connect_full", Event_Player_Full_Connect, EventHookMode_Post);
@@ -84,7 +85,7 @@ public OnPluginStart()
   SetMatchID();
   GetMatchSteamIDs();
 
-  if(DEBUG){ShowPlayersSteamIDs(Match_SteamIDs);} //Debug info
+  if(DEBUG){ShowPlayersSteamIDs(Match_SteamID);} //Debug info
 
   UpdateMatchStatus(db, MatchID, "ready");
 
@@ -102,11 +103,11 @@ public OnClientAuthorized(int client, const char[] steam_id)
   if(IsFakeClient(client) || StrEqual(steam_id, "BOT")) {return;}
 
   SetClientLanguage(client, DEFAULT_LANGUAGE);
-  strcopy(Players_SteamIDs[client], 32, steam_id);
-  if(DEBUG){PrintToServer("[Steam ID] > %s", Players_SteamIDs[client]);} //Debug info
+  strcopy(Player_SteamID[client], 32, steam_id);
+  if(DEBUG){PrintToServer("[Steam ID] > %s", Player_SteamID[client]);} //Debug info
 
 
-  if(!FindSteamID(Players_SteamIDs[client])){
+  if(!FindSteamID(Player_SteamID[client])){
     KickClient(client, "%t", "NoAccess");
   }
 }
@@ -127,34 +128,34 @@ public Action:Event_Player_Full_Connect(Handle:event, const String:name[], bool:
 
   if(IsFakeClient(client)) {return;}
 
-  if(DEBUG){PrintToServer("[Event] (%s) > Event_Player_Full_Connect", Players_SteamIDs[client]);} //Debug info
+  if(DEBUG){PrintToServer("[Event] (%s) > Event_Player_Full_Connect", Player_SteamID[client]);} //Debug info
 
-  SetPlayerName(db, client, Players_SteamIDs[client]);
-  SetPlayerData(db, client, Players_SteamIDs[client]);
+  SetPlayerName(db, client, Player_SteamID[client]);
+  SetPlayerData(db, client, Player_SteamID[client]);
 
-  TeamID = Players_InTeam[client];
+  TeamID = Players_TeamID[client];
 
   CreateDataTimer(1.0, AssignPlayerTeam, Datapack);
   WritePackCell(Datapack, client);
   WritePackCell(Datapack, TeamID);
 
-  if(DEBUG){ PrintToServer("[Team ID] (%s) > %i",Players_SteamIDs[client], TeamID); } //Debug info
+  if(DEBUG){ PrintToServer("[Team ID] (%s) > %i",Player_SteamID[client], TeamID); } //Debug info
 
-  Players_Connected[client] = true;
-  Players_TotalConnected++; //increase connected players count
+  Player_Connected[client] = true;
+  Players_Connected++; //increase connected players count
 
-  if(DEBUG){PrintToServer("[Players] > Connected: %i", Players_TotalConnected);} //Debug info
+  if(DEBUG){PrintToServer("[Players] > Connected: %i", Players_Connected);} //Debug info
 
-  UpdatePlayerStatus(db, MatchID, Players_SteamIDs[client], "connected");
+  UpdatePlayerStatus(db, MatchID, Player_SteamID[client], "connected");
 
-  if(DEBUG){PrintToServer("[DB] (%s) > UpdatePlayerStatus > connected", Players_SteamIDs[client]);} //Debug info
+  if(DEBUG){PrintToServer("[DB] (%s) > UpdatePlayerStatus > connected", Player_SteamID[client]);} //Debug info
 
-  if(Players_TotalConnected > 0 && Players_TotalConnected < PLAYERSCOUNT && g_MatchState == MatchState_None)
+  if(Players_Connected > 0 && Players_Connected < PLAYERSCOUNT && enum_MatchState == MatchState_None)
   {
     ChangeState(MatchState_Warmup);
   }
 
-  if(Players_TotalConnected == 1 && g_MatchState == MatchState_Warmup)
+  if(Players_Connected == 1 && enum_MatchState == MatchState_Warmup)
   {
     SetWarmupTime(10);
     ChangeState(MatchState_KnifeRound);
@@ -177,8 +178,8 @@ public Event_Player_Name(Handle:event, const String:name[], bool:dontBroadcast)
   if(IsFakeClient(client)) {return;}
   GetEventString(event, "newname", NewName, sizeof(NewName));
 
-  if(!StrEqual(NewName, Players_Names[client])){
-    SetClientInfo(client, "name", Players_Names[client]);
+  if(!StrEqual(NewName, Player_Name[client])){
+    SetClientInfo(client, "name", Player_Name[client]);
   }
 }
 
@@ -195,9 +196,9 @@ public Event_Player_Team(Handle:event, const String:name[], bool:dontBroadcast)
   int client = GetClientOfUserId(GetEventInt(event, "userid"));
   new Handle:Datapack;
 
-  if(IsFakeClient(client) || !IsClientInGame(client) || !Players_Connected[client]){return;}
+  if(IsFakeClient(client) || !IsClientInGame(client) || !Player_Connected[client]){return;}
 
-  new Needle_TeamID = Players_InTeam[client];
+  new Needle_TeamID = Players_TeamID[client];
   new New_TeamID = GetEventInt(event, "team");
 
   if(Needle_TeamID != New_TeamID){
@@ -210,12 +211,12 @@ public Event_Player_Team(Handle:event, const String:name[], bool:dontBroadcast)
 public Action Event_Round_Start(Event event, const char[] name, bool dontBroadcast)
 {
   /* Set knife round */
-  if(!IsWarmup() && g_MatchState == MatchState_KnifeRound && !g_HasKnifeRoundStarted){
-    g_HasKnifeRoundStarted = true;
+  if(!IsWarmup() && enum_MatchState == MatchState_KnifeRound && !bool_HasKnifeRoundStarted){
+    bool_HasKnifeRoundStarted = true;
     StartKnifeRound();
   }
 
-  if(IsWarmup && g_MatchState == MatchState_WaitingForKnifeRoundDecision && g_PendingSwitchDecesion)
+  if(IsWarmup && enum_MatchState == MatchState_WaitingForKnifeRoundDecision && bool_PendingSwitchDecision)
   {
     HookEvent("player_say", Event_Player_Say);
   }
@@ -224,10 +225,10 @@ public Action Event_Round_Start(Event event, const char[] name, bool dontBroadca
 public Event_Round_End(Handle:event, const String:name[], bool:dontBroadcast)
 {
   new Winner = GetEventInt(event, "winner");
-  if(g_MatchState == MatchState_KnifeRound && g_HasKnifeRoundStarted){
-    g_HasKnifeRoundStarted = false;
-    g_PendingSwitchDecesion = true;
-    i_CaptainClientID = Players_Teams[Winner-2][0];
+  if(enum_MatchState == MatchState_KnifeRound && bool_HasKnifeRoundStarted){
+    bool_HasKnifeRoundStarted = false;
+    bool_PendingSwitchDecision = true;
+    int_ClientDecisionSelector = Players_BelongsToTeam[Winner-2][0];
 
     ChangeState(MatchState_WaitingForKnifeRoundDecision);
     ServerCommand("mp_warmup_start");
@@ -241,7 +242,7 @@ public Event_Player_Say(Handle:event, const String:name[], bool:dontBroadcast)
   new client = GetClientOfUserId(GetEventInt(event, "userid"));
   GetEventString(event, "text", text, sizeof(text));
 
-  if(g_MatchState == MatchState_WaitingForKnifeRoundDecision && g_PendingSwitchDecesion && client == i_CaptainClientID){
+  if(enum_MatchState == MatchState_WaitingForKnifeRoundDecision && bool_PendingSwitchDecision && client == int_ClientDecisionSelector){
     if(StrEqual(text,"!stay")){
       PrintToChatAll("Staying!");
     }
@@ -259,20 +260,20 @@ public Event_Player_Say(Handle:event, const String:name[], bool:dontBroadcast)
  *********************************************************/
 public OnClientDisconnect(int client)
 {
-  if(IsFakeClient(client) || !Players_Connected[client]) {return;}
+  if(IsFakeClient(client) || !Player_Connected[client]) {return;}
 
-  UpdatePlayerStatus(db, MatchID, Players_SteamIDs[client], "disconnected");
-  if(DEBUG){PrintToServer("[DB] (%s)> UpdatePlayerStatus > disconnected",Players_SteamIDs[client]);} //Debug info
+  UpdatePlayerStatus(db, MatchID, Player_SteamID[client], "disconnected");
+  if(DEBUG){PrintToServer("[DB] (%s)> UpdatePlayerStatus > disconnected",Player_SteamID[client]);} //Debug info
 
-  Players_Names[client] = "";
-  Players_SteamIDs[client] = "";
-  Players_Connected[client] = false;
-  Players_TotalConnected--;
+  Player_Name[client] = "";
+  Player_SteamID[client] = "";
+  Player_Connected[client] = false;
+  Players_Connected--;
 
-  if(DEBUG){PrintToServer("[Players] > Connected: %i", Players_TotalConnected);} //Debug info
+  if(DEBUG){PrintToServer("[Players] > Connected: %i", Players_Connected);} //Debug info
 }
 
 public void ChangeState(MatchState state) {
-  if(DEBUG){PrintToServer("[Match State] > Changed from %d -> %d", g_MatchState, state);} //Debug info
-  g_MatchState = state;
+  if(DEBUG){PrintToServer("[Match State] > Changed from %d -> %d", enum_MatchState, state);} //Debug info
+  enum_MatchState = state;
 }

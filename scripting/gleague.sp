@@ -36,16 +36,18 @@ new int_ClientDecisionSelector = 0;
 new Handle:cvar_mp_warmuptime = INVALID_HANDLE;
 new Handle:cvar_team_name[2]  = INVALID_HANDLE;
 
+/* match data */
+
+bool bool_HasKnifeRoundStarted = false;
+bool bool_PendingSwitchDecision = false;
+bool bool_TeamsHasSwitched = false;
+
 /* include gleague additional functions */
 #include <gleague/enums>
 #include <gleague/mysql>
 #include <gleague/functions>
 
 
-/* match data */
-MatchState enum_MatchState = MatchState_None;
-bool bool_HasKnifeRoundStarted = false;
-bool bool_PendingSwitchDecision = false;
 
 
 
@@ -140,6 +142,9 @@ public Action:Event_Player_Full_Connect(Handle:event, const String:name[], bool:
   SetPlayerData(db, client, Player_SteamID[client]);
 
   TeamID = Players_TeamID[client];
+  if(bool_TeamsHasSwitched){
+    TeamID = GetOtherTeam(Players_TeamID[client]);
+  }
 
   CreateDataTimer(1.0, AssignPlayerTeam, Datapack);
   WritePackCell(Datapack, client);
@@ -161,7 +166,7 @@ public Action:Event_Player_Full_Connect(Handle:event, const String:name[], bool:
     ChangeState(MatchState_Warmup);
   }
 
-  if(Players_Connected == PLAYERSCOUNT && enum_MatchState == MatchState_Warmup)
+  if(Players_Connected == 1 && enum_MatchState == MatchState_Warmup)
   {
     SetWarmupTime(10);
     ChangeState(MatchState_KnifeRound);
@@ -200,12 +205,16 @@ public Event_Player_Name(Handle:event, const String:name[], bool:dontBroadcast)
 public Event_Player_Team(Handle:event, const String:name[], bool:dontBroadcast)
 {
   int client = GetClientOfUserId(GetEventInt(event, "userid"));
+  new Needle_TeamID;
+  new New_TeamID;
   new Handle:Datapack;
 
   if(IsFakeClient(client) || !IsClientInGame(client) || !Player_Connected[client]){return;}
 
-  new Needle_TeamID = Players_TeamID[client];
-  new New_TeamID = GetEventInt(event, "team");
+  if(bool_TeamsHasSwitched){return;}
+
+  Needle_TeamID = Players_TeamID[client];
+  New_TeamID = GetEventInt(event, "team");
 
   if(Needle_TeamID != New_TeamID){
     CreateDataTimer(1.0, AssignPlayerTeam, Datapack);
@@ -214,6 +223,14 @@ public Event_Player_Team(Handle:event, const String:name[], bool:dontBroadcast)
   }
 }
 
+/*********************************************************
+ *  event fire when round starts
+ * 
+ * @param  Event      event handle
+ * @param  Name       string
+ * @param  Broadcast    boolean
+ * @noreturn
+ *********************************************************/
 public Action Event_Round_Start(Event event, const char[] name, bool dontBroadcast)
 {
   /* Set knife round */
@@ -228,6 +245,14 @@ public Action Event_Round_Start(Event event, const char[] name, bool dontBroadca
   }
 }
 
+/*********************************************************
+ *  event fire when round ends
+ * 
+ * @param  Event      event handle
+ * @param  Name       string
+ * @param  Broadcast    boolean
+ * @noreturn
+ *********************************************************/
 public Event_Round_End(Handle:event, const String:name[], bool:dontBroadcast)
 {
   new Winner = GetEventInt(event, "winner");
@@ -250,6 +275,14 @@ public Event_Round_End(Handle:event, const String:name[], bool:dontBroadcast)
   }
 }
 
+/*********************************************************
+ *  event fire when player say something to chat
+ * 
+ * @param  Event      event handle
+ * @param  Name       string
+ * @param  Broadcast    boolean
+ * @noreturn
+ *********************************************************/
 public Event_Player_Say(Handle:event, const String:name[], bool:dontBroadcast)
 {
   new String:text[20];
@@ -257,14 +290,22 @@ public Event_Player_Say(Handle:event, const String:name[], bool:dontBroadcast)
   GetEventString(event, "text", text, sizeof(text));
 
   if(enum_MatchState == MatchState_WaitingForKnifeRoundDecision && bool_PendingSwitchDecision && client == int_ClientDecisionSelector){
-    if(StrEqual(text,"!stay")){
-      PrintToChatAll("Staying!");
+    if(StrEqual(text,"!stay") || StrEqual(text,"!switch")){
+      if(StrEqual(text,"!stay")){
+        PrintToChatAll("Staying!");
+      }
+      else if(StrEqual(text,"!switch")){
+        PrintToChatAll("Switching teams!");
+        SwapTeams();
+        SwitchTeamNames();
+        bool_TeamsHasSwitched = true;
+      }
+
+      bool_PendingSwitchDecision = false;
+      bool_HasKnifeRoundStarted = false;
+      ChangeState(MatchState_GoingLive);
+      UnhookEvent("player_say", Event_Player_Say);
     }
-    else if(StrEqual(text,"!switch")){
-      PrintToChatAll("Switching teams!");
-      CS_SwapTeams();
-    }
-    UnhookEvent("player_say", Event_Player_Say);
   }
 }
 
@@ -286,9 +327,4 @@ public OnClientDisconnect(int client)
   Players_Connected--;
 
   if(DEBUG){PrintToServer("[Players] > Connected: %i", Players_Connected);} //Debug info
-}
-
-public void ChangeState(MatchState state) {
-  if(DEBUG){PrintToServer("[Match State] > Changed from %d -> %d", enum_MatchState, state);} //Debug info
-  enum_MatchState = state;
 }

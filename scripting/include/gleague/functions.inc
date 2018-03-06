@@ -225,8 +225,7 @@ stock CS_EquipKnife(client)
  * 
  * @noreturn
  *********************************************************/
-
-stock CS_StripButKnife(client, bool:equip=true)
+stock SetKnifeOnly(client, bool:equip=true)
 {
   if (!IsClientInGame(client) || GetClientTeam(client) <= 1) {
     return false;
@@ -252,7 +251,7 @@ public StartKnifeRound()
     {
       if (IsClientInGame(i) && GetClientTeam(i) > 1)
       {
-        CS_StripButKnife(i);
+        SetKnifeOnly(i);
       }
     }
 
@@ -269,7 +268,6 @@ public StartKnifeRound()
  * @return    false on error
  *      team index
  *********************************************************/
-
 stock GetOtherTeam(team)
 {
   if (team == 2) {return 3;}
@@ -283,13 +281,47 @@ stock GetOtherTeam(team)
  * 
  * @noreturn
  *********************************************************/
-
-stock CS_SwapTeams()
+stock SwapTeams()
 {
   new max_clients = GetMaxClients();
+  new Handle:Datapack;
   for (new i = 1; i <= max_clients; i++){
-    if (IsClientInGame(i) && !IsFakeClient(i) && GetClientTeam(i) > 1){
-      ChangeClientTeam(i, GetOtherTeam(GetClientTeam(i)));
+    if (IsClientInGame(i) && !IsFakeClient(i) && Players_TeamID[i] > 1){
+      CreateDataTimer(1.0, AssignPlayerTeam, Datapack);
+      WritePackCell(Datapack, i);
+      WritePackCell(Datapack, GetOtherTeam(Players_TeamID[i]));
+    }
+
+    if(IsClientInGame(i) && IsFakeClient(i)){
+      CreateDataTimer(1.0, AssignPlayerTeam, Datapack);
+      WritePackCell(Datapack, i);
+      WritePackCell(Datapack, GetOtherTeam(GetClientTeam(i));  
     }
   }
+}
+
+/*********************************************************
+ *  swap team names
+ * 
+ * @noreturn
+ *********************************************************/
+stock SwitchTeamNames()
+{
+    char Tname[64], CTname[64];
+    GetConVarString(cvar_team_name[0], CTname, sizeof(CTname));
+    GetConVarString(cvar_team_name[1], Tname, sizeof(Tname));
+    SetConVarString(cvar_team_name[0], Tname);
+    SetConVarString(cvar_team_name[1], CTname);
+}
+
+/*********************************************************
+ *  change match state
+ * 
+ * @param  state  MatchState
+ * @noreturn
+ *********************************************************/
+stock ChangeState(MatchState state)
+{
+  if(DEBUG){PrintToServer("[Match State] > Changed from %d -> %d", enum_MatchState, state);} //Debug info
+  enum_MatchState = state;
 }

@@ -6,3 +6,5 @@ enum MatchState {
   MatchState_GoingLive,                     	// in the lo3 process
   MatchState_Live,                          	// the match is live
 };
+
+MatchState enum_MatchState = MatchState_None;

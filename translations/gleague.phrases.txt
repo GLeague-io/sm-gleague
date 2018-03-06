@@ -6,9 +6,15 @@
 		"ru"		"У вас нет доступа к данному матчу [gleague.io] "
 	}
 
-	"BadSteamAuth"
+	"KnifeRoundStarts"
 	{
-		"en"		"Can't get SteamID"
-		"ru"		"Не удалось получить SteamID"
+		"en"	"\x01[GLeague.io] > \x01\x0B\x04\"%s\" Knife Round!"
+		"ru"	"\x01[GLeague.io] > \x01\x0B\x04\"%s\" Ножевой Раунд!"
+	}
+
+	"WinKnifeRound"
+	{
+		"en"	"\x01[GLeague.io] > \x01\x0B\x04\"%s\" win knife round!"
+		"ru"	"\x01[GLeague.io] > \x01\x0B\x04\"%s\" выиграли ножевой раунд!"
 	}
 }

@@ -201,6 +201,16 @@ stock SetWarmupTime(int time)
     SetConVarInt(cvar_mp_warmuptime, time);
 }
 
+stock Action:StartWarmup(Handle timer)
+{
+    ServerCommand("mp_warmup_start");
+}
+
+stock Action:EndWarmup(Handle timer)
+{
+  ServerCommand("mp_warmup_end");
+}
+
 stock bool:IsWarmup()
 {
   if (GameRules_GetProp("m_bWarmupPeriod") == 0) {
@@ -324,4 +334,9 @@ stock ChangeState(MatchState state)
 {
   if(DEBUG){PrintToServer("[Match State] > Changed from %d -> %d", enum_MatchState, state);} //Debug info
   enum_MatchState = state;
+}
+
+stock MakeRestart()
+{
+  SetConVarInt(cvar_mp_restartgame, 1);
 }

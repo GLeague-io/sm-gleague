@@ -28,30 +28,24 @@ new Players_Indexes[10];
 new Players_Connected = 0;
 new Players_TeamID[10];
 new Players_BelongsToTeam[2][10];
-
 new int_ClientDecisionSelector = 0;
-
 
 /* server cvars */
 new Handle:cvar_mp_warmuptime = INVALID_HANDLE;
+new Handle:cvar_mp_restartgame = INVALID_HANDLE;
 new Handle:cvar_team_name[2]  = INVALID_HANDLE;
 
 /* match data */
-
 bool bool_HasKnifeRoundStarted = false;
 bool bool_PendingSwitchDecision = false;
 bool bool_TeamsHasSwitched = false;
+bool bool_MatchLive = false;
+int int_ServerRestartsCount = 0;
 
 /* include gleague additional functions */
 #include <gleague/enums>
 #include <gleague/mysql>
 #include <gleague/functions>
-
-
-
-
-
-
 
 /*********************************************************
  *  plugin description
@@ -73,6 +67,7 @@ public OnPluginStart()
   LoadTranslations("gleague.phrases.txt");
 
   cvar_mp_warmuptime = FindConVar("mp_warmuptime");
+  cvar_mp_restartgame = FindConVar("mp_restartgame");
   cvar_team_name[0] = FindConVar("mp_teamname_2");
   cvar_team_name[1] = FindConVar("mp_teamname_1");
 
@@ -233,15 +228,35 @@ public Event_Player_Team(Handle:event, const String:name[], bool:dontBroadcast)
  *********************************************************/
 public Action Event_Round_Start(Event event, const char[] name, bool dontBroadcast)
 {
+  if(DEBUG){PrintToServer("[Warmup] > %i",IsWarmup());} //Debug info
+
   /* Set knife round */
   if(!IsWarmup() && enum_MatchState == MatchState_KnifeRound && !bool_HasKnifeRoundStarted){
     bool_HasKnifeRoundStarted = true;
     StartKnifeRound();
   }
 
-  if(IsWarmup && enum_MatchState == MatchState_WaitingForKnifeRoundDecision && bool_PendingSwitchDecision)
+  if(IsWarmup() && enum_MatchState == MatchState_WaitingForKnifeRoundDecision && bool_PendingSwitchDecision)
   {
     HookEvent("player_say", Event_Player_Say);
+    PrintToChatAll(" \x01[GLeague.io] > \x01\x0B\x04 %t", "WaitingForStaySwitch", Player_Name[int_ClientDecisionSelector]);
+  }
+
+  if(!IsWarmup() && enum_MatchState == MatchState_GoingLive)
+  {
+    if(int_ServerRestartsCount < 3){
+      if(DEBUG){PrintToServer("[LiveOn3] > restarts count %i", int_ServerRestartsCount);} //Debug info  
+      int_ServerRestartsCount++;
+      MakeRestart();
+    }else{
+      ChangeState(MatchState_Live);
+    }
+  }
+
+  if(!IsWarmup() && enum_MatchState == MatchState_Live && !bool_MatchLive)
+  {
+    PrintToChatAll(" \x01[GLeague.io] > \x01\x0B\x04 %t", "MatchLive");
+    bool_MatchLive = true;
   }
 }
 
@@ -270,8 +285,8 @@ public Event_Round_End(Handle:event, const String:name[], bool:dontBroadcast)
     PrintToChatAll(" \x01[GLeague.io] > \x01\x0B\x04 %t", "WinKnifeRound", Winner_TeamName);
 
     ChangeState(MatchState_WaitingForKnifeRoundDecision);
-    ServerCommand("mp_warmup_start");
     SetWarmupTime(60);
+    CreateTimer(3.0, StartWarmup);
   }
 }
 
@@ -305,6 +320,8 @@ public Event_Player_Say(Handle:event, const String:name[], bool:dontBroadcast)
       bool_HasKnifeRoundStarted = false;
       ChangeState(MatchState_GoingLive);
       UnhookEvent("player_say", Event_Player_Say);
+
+      CreateTimer(0.5,EndWarmup);
     }
   }
 }

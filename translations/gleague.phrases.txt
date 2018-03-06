@@ -17,4 +17,16 @@
 		"en"	"\"%s\" win knife round!"
 		"ru"	"\"%s\" выиграли ножевой раунд!"
 	}
+
+	"WaitingForStaySwitch"
+	{
+		"en"	"Waiting for !stay/!switch command from teamleader \"%s\""
+		"ru"	"Ожидаем команду !stay или !switch от капитана \"%s\""
+	}
+
+	"MatchLive"
+	{
+		"en"	"Match Live! [gl&hf]"
+		"ru"	"Матч начался! [gl&hf]"
+	}
 }

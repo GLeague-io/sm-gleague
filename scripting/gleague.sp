@@ -267,7 +267,7 @@ public Event_Round_End(Handle:event, const String:name[], bool:dontBroadcast)
     bool_PendingSwitchDecision = true;
     int_ClientDecisionSelector = Players_BelongsToTeam[Winner-2][0];
 
-    PrintToChatAll(" \x01[GLeague] > \x01\x0B\x04\"%s\" win knife round!", Winner_TeamName);
+    PrintToChatAll("%t", "WinKnifeRound", Winner_TeamName);
 
     ChangeState(MatchState_WaitingForKnifeRoundDecision);
     ServerCommand("mp_warmup_start");

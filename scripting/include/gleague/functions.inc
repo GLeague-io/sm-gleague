@@ -257,7 +257,7 @@ public StartKnifeRound()
 
     UpdateMatchStatus(db, MatchID, "knife");
 
-    PrintToChatAll(" \x01[GLeague] > \x01\x0B\x04Knife round started!");
+    PrintToChatAll("%t", "KnifeRoundStarts");
     if(DEBUG){PrintToServer("[Knife round] initialized");} //Debug info
 }
 
@@ -295,7 +295,7 @@ stock SwapTeams()
     if(IsClientInGame(i) && IsFakeClient(i)){
       CreateDataTimer(1.0, AssignPlayerTeam, Datapack);
       WritePackCell(Datapack, i);
-      WritePackCell(Datapack, GetOtherTeam(GetClientTeam(i));  
+      WritePackCell(Datapack, GetOtherTeam(GetClientTeam(i)));  
     }
   }
 }

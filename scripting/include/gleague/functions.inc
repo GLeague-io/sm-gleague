@@ -257,7 +257,7 @@ public StartKnifeRound()
 
     UpdateMatchStatus(db, MatchID, "knife");
 
-    PrintToChatAll("%t", "KnifeRoundStarts");
+    PrintToChatAll(" \x01[GLeague.io] > \x01\x0B\x04 %t", "KnifeRoundStarts");
     if(DEBUG){PrintToServer("[Knife round] initialized");} //Debug info
 }
 

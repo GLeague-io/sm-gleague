@@ -267,7 +267,7 @@ public Event_Round_End(Handle:event, const String:name[], bool:dontBroadcast)
     bool_PendingSwitchDecision = true;
     int_ClientDecisionSelector = Players_BelongsToTeam[Winner-2][0];
 
-    PrintToChatAll("%t", "WinKnifeRound", Winner_TeamName);
+    PrintToChatAll(" \x01[GLeague.io] > \x01\x0B\x04 %t", "WinKnifeRound", Winner_TeamName);
 
     ChangeState(MatchState_WaitingForKnifeRoundDecision);
     ServerCommand("mp_warmup_start");
@@ -292,10 +292,10 @@ public Event_Player_Say(Handle:event, const String:name[], bool:dontBroadcast)
   if(enum_MatchState == MatchState_WaitingForKnifeRoundDecision && bool_PendingSwitchDecision && client == int_ClientDecisionSelector){
     if(StrEqual(text,"!stay") || StrEqual(text,"!switch")){
       if(StrEqual(text,"!stay")){
-        PrintToChatAll("Staying!");
+        PrintToChatAll(" \x01[GLeague.io] > \x01\x0B\x04 Staying!");
       }
       else if(StrEqual(text,"!switch")){
-        PrintToChatAll("Switching teams!");
+        PrintToChatAll(" \x01[GLeague.io] > \x01\x0B\x04 Switching teams!");
         SwapTeams();
         SwitchTeamNames();
         bool_TeamsHasSwitched = true;

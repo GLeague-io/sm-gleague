@@ -12,28 +12,28 @@
 #include <sdktools>
 
 /* debug */
-new bool:DEBUG = true;
+bool DEBUG = true;
 
 /* database handler */
-new Handle:db = INVALID_HANDLE;
+Handle db = INVALID_HANDLE;
 
 int MatchID = -1;
 
 /* players data storage */
-new String:Match_SteamID[2][STEAMID_SIZE];
-new String:Player_SteamID[10][STEAMID_SIZE];
-new String:Player_Name[10][NICKNAME_SIZE];
-new bool:Player_Connected[10] = false;
-new Players_Indexes[10];
-new Players_Connected = 0;
-new Players_TeamID[10];
-new Players_BelongsToTeam[2][10];
-new int_ClientDecisionSelector = 0;
+char Match_SteamID[2][STEAMID_SIZE];
+char Player_SteamID[10][STEAMID_SIZE];
+char Player_Name[10][NICKNAME_SIZE];
+bool Player_Connected[10] = false;
+int Players_Indexes[10];
+int Players_Connected = 0;
+int Players_TeamID[10];
+int Players_BelongsToTeam[2][10];
+int int_ClientDecisionSelector = 0;
 
 /* server cvars */
-new Handle:cvar_mp_warmuptime = INVALID_HANDLE;
-new Handle:cvar_mp_restartgame = INVALID_HANDLE;
-new Handle:cvar_team_name[2]  = INVALID_HANDLE;
+Handle cvar_mp_warmuptime = INVALID_HANDLE;
+Handle cvar_mp_restartgame = INVALID_HANDLE;
+Handle cvar_team_name[2]  = INVALID_HANDLE;
 
 /* custom cvars */
 ConVar g_cvar_knife_round; 
@@ -134,7 +134,7 @@ public Action:Event_Player_Full_Connect(Handle:event, const String:name[], bool:
 {
   int TeamID;
   int client = GetClientOfUserId(GetEventInt(event, "userid"));
-  new Handle:Datapack;
+  Handle Datapack;
 
   if(IsFakeClient(client)) {return;}
 
@@ -190,7 +190,7 @@ public Action:Event_Player_Full_Connect(Handle:event, const String:name[], bool:
 public Event_Player_Name(Handle:event, const String:name[], bool:dontBroadcast)
 {
   int client = GetClientOfUserId(GetEventInt(event, "userid"));
-  new String:NewName[32];
+  char NewName[32];
 
   if(IsFakeClient(client)) {return;}
   GetEventString(event, "newname", NewName, sizeof(NewName));
@@ -211,9 +211,8 @@ public Event_Player_Name(Handle:event, const String:name[], bool:dontBroadcast)
 public Event_Player_Team(Handle:event, const String:name[], bool:dontBroadcast)
 {
   int client = GetClientOfUserId(GetEventInt(event, "userid"));
-  new Needle_TeamID;
-  new New_TeamID;
-  new Handle:Datapack;
+  int Needle_TeamID, New_TeamID;
+  Handle Datapack;
 
   if(IsFakeClient(client) || !IsClientInGame(client) || !Player_Connected[client]){return;}
 
@@ -241,13 +240,14 @@ public Action Event_Round_Start(Event event, const char[] name, bool dontBroadca
 {
   if(DEBUG){PrintToServer("[Warmup] > %i",IsWarmup());} //Debug info
 
-  /* Set knife round */
+  /* Set knife round state */
   if(!IsWarmup() && enum_MatchState == MatchState_KnifeRound && !bool_HasKnifeRoundStarted){
     bool_HasKnifeRoundStarted = true;
     StartKnifeRound();
     UpdateMatchStatus(db, MatchID, "knife");
   }
 
+  /* Set stay switch state */
   if(IsWarmup() && enum_MatchState == MatchState_WaitingForKnifeRoundDecision && bool_PendingSwitchDecision)
   {
     HookEvent("player_say", Event_Player_Say);
@@ -256,6 +256,7 @@ public Action Event_Round_Start(Event event, const char[] name, bool dontBroadca
     UpdateMatchStatus(db, MatchID, "stay/switch");
   }
 
+  /* Make 3 restarts or change state to live */
   if(!IsWarmup() && enum_MatchState == MatchState_GoingLive)
   {
     if(int_ServerRestartsCount < 3){
@@ -285,7 +286,7 @@ public Action Event_Round_Start(Event event, const char[] name, bool dontBroadca
  *********************************************************/
 public Event_Round_End(Handle:event, const String:name[], bool:dontBroadcast)
 {
-  new Winner = GetEventInt(event, "winner");
+  int Winner = GetEventInt(event, "winner");
   char Winner_TeamName[32];
 
   if(Winner < 2) {return;}
@@ -315,8 +316,8 @@ public Event_Round_End(Handle:event, const String:name[], bool:dontBroadcast)
  *********************************************************/
 public Event_Player_Say(Handle:event, const String:name[], bool:dontBroadcast)
 {
-  new String:text[20];
-  new client = GetClientOfUserId(GetEventInt(event, "userid"));
+  char text[20];
+  int client = GetClientOfUserId(GetEventInt(event, "userid"));
   GetEventString(event, "text", text, sizeof(text));
 
   if(enum_MatchState == MatchState_WaitingForKnifeRoundDecision && bool_PendingSwitchDecision && client == int_ClientDecisionSelector){

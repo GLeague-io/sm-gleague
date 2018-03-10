@@ -174,6 +174,7 @@ stock SetPlayerName(Handle:database, int client, const char[] steam_id)
 {
   DBResultSet nameQuery;
   char query[256], real_nickname[32], current_nickname[32];
+
   Format(query,sizeof(query), "SELECT `nickname` FROM `players` WHERE `steamId` = '%s'", steam_id);
   nameQuery = SQL_Query(database, query);
 
@@ -241,10 +242,12 @@ stock SetKnifeOnly(client, bool:equip=true)
     return false;
   }
   
-  new item_index;
+  int item_index;
 
-  for (new i = 0; i < 5; i++){
-    if (i == 2){ continue; }
+  for (int i = 0; i < 5; i++){
+    if (i == 2){ 
+      continue; 
+    }
     if ((item_index = GetPlayerWeaponSlot(client, i)) != -1){
       RemovePlayerItem(client, item_index);
     }
@@ -257,10 +260,8 @@ stock SetKnifeOnly(client, bool:equip=true)
 
 public StartKnifeRound()
 {   
-    for (new i = 1; i <= PLAYERSCOUNT; i++)
-    {
-      if (IsClientInGame(i) && GetClientTeam(i) > 1)
-      {
+    for (int i = 1; i <= PLAYERSCOUNT; i++){
+      if (IsClientInGame(i) && GetClientTeam(i) > 1){
         SetKnifeOnly(i);
       }
     }
@@ -293,9 +294,10 @@ stock GetOtherTeam(team)
  *********************************************************/
 stock SwapTeams()
 {
-  new max_clients = GetMaxClients();
-  new Handle:Datapack;
-  for (new i = 1; i <= max_clients; i++){
+  int max_clients = GetMaxClients();
+  Handle Datapack;
+
+  for (int i = 1; i <= max_clients; i++){
     if (IsClientInGame(i) && !IsFakeClient(i) && Players_TeamID[i] > 1){
       CreateDataTimer(1.0, AssignPlayerTeam, Datapack);
       WritePackCell(Datapack, i);

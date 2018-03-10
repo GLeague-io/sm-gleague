@@ -35,6 +35,9 @@ new Handle:cvar_mp_warmuptime = INVALID_HANDLE;
 new Handle:cvar_mp_restartgame = INVALID_HANDLE;
 new Handle:cvar_team_name[2]  = INVALID_HANDLE;
 
+/* custom cvars */
+ConVar g_cvar_knife_round; 
+
 /* match data */
 bool bool_HasKnifeRoundStarted = false;
 bool bool_PendingSwitchDecision = false;
@@ -52,9 +55,9 @@ int int_ServerRestartsCount = 0;
  *********************************************************/
 public Plugin myinfo =
 {
-  name = "GLeague MM",
+  name = "GLeague",
   author = "Stanislav 'glmn' Gelman",
-  description = "An additional cs:go matchmaking system with own rankings by 'glmn'. From Russian for Russians w/ love :)",
+  description = "An additional cs:go matchmaking system with own rankings. From Russian for Russians w/ love :)",
   version = VERSION,
   url = "http://gleague.io/"
 };
@@ -66,6 +69,7 @@ public OnPluginStart()
 {
   LoadTranslations("gleague.phrases.txt");
 
+  /* server cvars */
   cvar_mp_warmuptime = FindConVar("mp_warmuptime");
   cvar_mp_restartgame = FindConVar("mp_restartgame");
   cvar_team_name[0] = FindConVar("mp_teamname_2");
@@ -73,6 +77,9 @@ public OnPluginStart()
 
   SetConVarString(cvar_team_name[0], "AVA Gaming");
   SetConVarString(cvar_team_name[1], "Natus Vincere");
+
+  /* custom cvars */
+  g_cvar_knife_round = CreateConVar("gleague_knife_round", "0", "Knife round on/off");
 
   /* Player event hooks */
   HookEvent("player_connect_full", Event_Player_Full_Connect, EventHookMode_Post);
@@ -164,7 +171,11 @@ public Action:Event_Player_Full_Connect(Handle:event, const String:name[], bool:
   if(Players_Connected == 1 && enum_MatchState == MatchState_Warmup)
   {
     SetWarmupTime(10);
-    ChangeState(MatchState_KnifeRound);
+    if(g_cvar_knife_round.IntValue){
+      ChangeState(MatchState_KnifeRound);
+    }else{
+      ChangeState(MatchState_GoingLive);
+    }
   }
 }
 
@@ -234,12 +245,15 @@ public Action Event_Round_Start(Event event, const char[] name, bool dontBroadca
   if(!IsWarmup() && enum_MatchState == MatchState_KnifeRound && !bool_HasKnifeRoundStarted){
     bool_HasKnifeRoundStarted = true;
     StartKnifeRound();
+    UpdateMatchStatus(db, MatchID, "knife");
   }
 
   if(IsWarmup() && enum_MatchState == MatchState_WaitingForKnifeRoundDecision && bool_PendingSwitchDecision)
   {
     HookEvent("player_say", Event_Player_Say);
     PrintToChatAll(" \x01[GLeague.io] > \x01\x0B\x04 %t", "WaitingForStaySwitch", Player_Name[int_ClientDecisionSelector]);
+    
+    UpdateMatchStatus(db, MatchID, "stay/switch");
   }
 
   if(!IsWarmup() && enum_MatchState == MatchState_GoingLive)
@@ -257,6 +271,7 @@ public Action Event_Round_Start(Event event, const char[] name, bool dontBroadca
   {
     PrintToChatAll(" \x01[GLeague.io] > \x01\x0B\x04 %t", "MatchLive");
     bool_MatchLive = true;
+    UpdateMatchStatus(db, MatchID, "live");
   }
 }
 

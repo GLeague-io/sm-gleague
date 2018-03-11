@@ -260,6 +260,9 @@ stock SetKnifeOnly(client, bool:equip=true)
 
 public StartKnifeRound()
 {   
+    bool_HasKnifeRoundStarted = true;
+    UpdateMatchStatus(db, MatchID, "knife");
+
     for (int i = 1; i <= PLAYERSCOUNT; i++){
       if (IsClientInGame(i) && GetClientTeam(i) > 1){
         SetKnifeOnly(i);
@@ -341,4 +344,66 @@ stock ChangeState(MatchState state)
 stock MakeRestart()
 {
   SetConVarInt(cvar_mp_restartgame, 1);
+}
+
+stock bool ReadyForKnifeRound()
+{
+  if(!IsWarmup() && enum_MatchState == MatchState_KnifeRound && !bool_HasKnifeRoundStarted){
+    return true;
+  }
+
+  return false;
+}
+
+stock bool ReadyForStaySwitch()
+{
+  if(IsWarmup() && enum_MatchState == MatchState_WaitingForKnifeRoundDecision && bool_PendingSwitchDecision){
+    return true;
+  }
+
+  return false;
+}
+
+stock bool ReadyForLiveRestarts()
+{
+  if(!IsWarmup() && enum_MatchState == MatchState_GoingLive){
+    return true;
+  }
+
+  return false;
+}
+
+stock bool ReadyForLive()
+{
+  if(!IsWarmup() && enum_MatchState == MatchState_Live && !bool_MatchLive){
+    return true;
+  }
+
+  return false;
+}
+
+public StartPendingStaySwitch()
+{
+  HookEvent("player_say", Event_Player_Say);
+  PrintToChatAll(" \x01[GLeague.io] > \x01\x0B\x04 %t", "WaitingForStaySwitch", Player_Name[int_ClientDecisionSelector]);
+  
+  UpdateMatchStatus(db, MatchID, "stay/switch");
+}
+
+public StartPreLiveRestarts()
+{
+  if(int_ServerRestartsCount < 3){
+    if(DEBUG){PrintToServer("[LiveOn3] > restarts count %i", int_ServerRestartsCount);} //Debug info  
+    int_ServerRestartsCount++;
+    MakeRestart();
+  }else{
+    ChangeState(MatchState_Live);
+  }
+}
+
+public StartLive()
+{
+    PrintToChatAll(" \x01[GLeague.io] > \x01\x0B\x04 %t", "MatchLive");
+    bool_MatchLive = true;
+    UpdateMatchStatus(db, MatchID, "live");
 }

@@ -163,13 +163,11 @@ public Action:Event_Player_Full_Connect(Handle:event, const String:name[], bool:
 
   if(DEBUG){PrintToServer("[DB] (%s) > UpdatePlayerStatus > connected", Player_SteamID[client]);} //Debug info
 
-  if(Players_Connected > 0 && Players_Connected < PLAYERSCOUNT && enum_MatchState == MatchState_None)
-  {
+  if(Players_Connected > 0 && Players_Connected < PLAYERSCOUNT && enum_MatchState == MatchState_None){
     ChangeState(MatchState_Warmup);
   }
 
-  if(Players_Connected == 1 && enum_MatchState == MatchState_Warmup)
-  {
+  if(Players_Connected == 1 && enum_MatchState == MatchState_Warmup){
     SetWarmupTime(10);
     if(g_cvar_knife_round.IntValue){
       ChangeState(MatchState_KnifeRound);
@@ -238,42 +236,17 @@ public Event_Player_Team(Handle:event, const String:name[], bool:dontBroadcast)
  *********************************************************/
 public Action Event_Round_Start(Event event, const char[] name, bool dontBroadcast)
 {
-  if(DEBUG){PrintToServer("[Warmup] > %i",IsWarmup());} //Debug info
-
   /* Set knife round state */
-  if(!IsWarmup() && enum_MatchState == MatchState_KnifeRound && !bool_HasKnifeRoundStarted){
-    bool_HasKnifeRoundStarted = true;
-    StartKnifeRound();
-    UpdateMatchStatus(db, MatchID, "knife");
-  }
+  if(ReadyForKnifeRound()){ StartKnifeRound(); }
 
   /* Set stay switch state */
-  if(IsWarmup() && enum_MatchState == MatchState_WaitingForKnifeRoundDecision && bool_PendingSwitchDecision)
-  {
-    HookEvent("player_say", Event_Player_Say);
-    PrintToChatAll(" \x01[GLeague.io] > \x01\x0B\x04 %t", "WaitingForStaySwitch", Player_Name[int_ClientDecisionSelector]);
-    
-    UpdateMatchStatus(db, MatchID, "stay/switch");
-  }
+  if(ReadyForStaySwitch()){ StartPendingStaySwitch(); }
 
   /* Make 3 restarts or change state to live */
-  if(!IsWarmup() && enum_MatchState == MatchState_GoingLive)
-  {
-    if(int_ServerRestartsCount < 3){
-      if(DEBUG){PrintToServer("[LiveOn3] > restarts count %i", int_ServerRestartsCount);} //Debug info  
-      int_ServerRestartsCount++;
-      MakeRestart();
-    }else{
-      ChangeState(MatchState_Live);
-    }
-  }
+  if(ReadyForLiveRestarts()){ StartPreLiveRestarts(); }
 
-  if(!IsWarmup() && enum_MatchState == MatchState_Live && !bool_MatchLive)
-  {
-    PrintToChatAll(" \x01[GLeague.io] > \x01\x0B\x04 %t", "MatchLive");
-    bool_MatchLive = true;
-    UpdateMatchStatus(db, MatchID, "live");
-  }
+  /* Set live state */
+  if(ReadyForLive()){ StartLive(); }
 }
 
 /*********************************************************

@@ -382,6 +382,15 @@ stock bool ReadyForLive()
   return false;
 }
 
+stock bool StaySwitchDecisionMissed()
+{
+  if(enum_MatchState == MatchState_WaitingForKnifeRoundDecision && bool_PendingSwitchDecision){
+    return true;
+  }
+
+  return false;
+}
+
 public StartPendingStaySwitch()
 {
   HookEvent("player_say", Event_Player_Say);
@@ -392,9 +401,11 @@ public StartPendingStaySwitch()
 
 public StartPreLiveRestarts()
 {
-  if(int_ServerRestartsCount < 3){
-    if(DEBUG){PrintToServer("[LiveOn3] > restarts count %i", int_ServerRestartsCount);} //Debug info  
-    int_ServerRestartsCount++;
+  if(int_ServerRestartsCount > 0){
+    if(DEBUG){PrintToServer("[LiveOn3] > restarts count %i", int_ServerRestartsCount);} //Debug info
+
+    PrintToChatAll(" \x01[GLeague.io] > \x01\x0B\x04 %i", int_ServerRestartsCount);
+    int_ServerRestartsCount--;
     MakeRestart();
   }else{
     ChangeState(MatchState_Live);
@@ -406,4 +417,12 @@ public StartLive()
     PrintToChatAll(" \x01[GLeague.io] > \x01\x0B\x04 %t", "MatchLive");
     bool_MatchLive = true;
     UpdateMatchStatus(db, MatchID, "live");
+}
+
+public SetStayDecision()
+{
+    UnhookEvent("player_say", Event_Player_Say);
+    bool_PendingSwitchDecision = false;
+    bool_HasKnifeRoundStarted = false;
+    ChangeState(MatchState_GoingLive);
 }

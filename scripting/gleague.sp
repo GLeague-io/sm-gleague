@@ -43,7 +43,7 @@ bool bool_HasKnifeRoundStarted = false;
 bool bool_PendingSwitchDecision = false;
 bool bool_TeamsHasSwitched = false;
 bool bool_MatchLive = false;
-int int_ServerRestartsCount = 0;
+int int_ServerRestartsCount = 3;
 
 /* include gleague additional functions */
 #include <gleague/enums>
@@ -79,7 +79,7 @@ public OnPluginStart()
   SetConVarString(cvar_team_name[1], "Natus Vincere");
 
   /* custom cvars */
-  g_cvar_knife_round = CreateConVar("gleague_knife_round", "0", "Knife round on/off");
+  g_cvar_knife_round = CreateConVar("gleague_knife_round", "1", "Knife round on/off");
 
   /* Player event hooks */
   HookEvent("player_connect_full", Event_Player_Full_Connect, EventHookMode_Post);
@@ -242,6 +242,9 @@ public Action Event_Round_Start(Event event, const char[] name, bool dontBroadca
   /* Set stay switch state */
   if(ReadyForStaySwitch()){ StartPendingStaySwitch(); }
 
+  /* Set stay decision if missed */
+  if(StaySwitchDecisionMissed()){ SetStayDecision(); }
+
   /* Make 3 restarts or change state to live */
   if(ReadyForLiveRestarts()){ StartPreLiveRestarts(); }
 
@@ -274,7 +277,7 @@ public Event_Round_End(Handle:event, const String:name[], bool:dontBroadcast)
     PrintToChatAll(" \x01[GLeague.io] > \x01\x0B\x04 %t", "WinKnifeRound", Winner_TeamName);
 
     ChangeState(MatchState_WaitingForKnifeRoundDecision);
-    SetWarmupTime(60);
+    SetWarmupTime(7);
     CreateTimer(3.0, StartWarmup);
   }
 }

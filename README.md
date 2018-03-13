@@ -1,4 +1,4 @@
-# :+1: GLeague MatchMaking System - CS:GO SourceMod Plugin :gun:
+# :gun: GLeague MatchMaking System - CS:GO
 ![Language: Sourcepawn](https://img.shields.io/badge/language-sourcepawn-green.svg) ![Sourcemod Plugin](https://img.shields.io/badge/sourcemod-plugin-green.svg)  ![Game: CS:GO](https://img.shields.io/badge/game-cs:go-green.svg) 
 
 ## Installation

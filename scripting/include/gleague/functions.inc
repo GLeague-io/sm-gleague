@@ -199,12 +199,12 @@ stock SetPlayerName(Handle:database, int client, const char[] steam_id)
 
 stock SetWarmupTime(int time)
 {
-    SetConVarInt(cvar_mp_warmuptime, time);
+  SetConVarInt(cvar_mp_warmuptime, time);
 }
 
 stock Action:StartWarmup(Handle timer)
 {
-    ServerCommand("mp_warmup_start");
+  ServerCommand("mp_warmup_start");
 }
 
 stock Action:EndWarmup(Handle timer)
@@ -215,7 +215,7 @@ stock Action:EndWarmup(Handle timer)
 stock bool:IsWarmup()
 {
   if (GameRules_GetProp("m_bWarmupPeriod") == 0) {
-      return false;
+    return false;
   }
   return true;
 }
@@ -384,7 +384,7 @@ stock bool ReadyForLive()
 
 stock bool StaySwitchDecisionMissed()
 {
-  if(enum_MatchState == MatchState_WaitingForKnifeRoundDecision && bool_PendingSwitchDecision){
+  if(!IsWarmup() && enum_MatchState == MatchState_WaitingForKnifeRoundDecision && bool_PendingSwitchDecision){
     return true;
   }
 

@@ -2,14 +2,13 @@
  *  updates match status in database
  * 
  * @param  Database			timer handle
- * @param  MatchID			integer
- * @param  Status			string message
+ * @param  Status			  string message
  * @noreturn
  *********************************************************/
-stock UpdateMatchStatus(Handle:database, int match, char[] status)
+stock UpdateMatchStatus(Handle:database, char[] status)
 {
   char query[256];
-  Format(query,sizeof(query), "UPDATE `matches` SET `status` = '%s' WHERE `match_id` = '%i'",status, match);
+  Format(query,sizeof(query), "UPDATE `matches` SET `status` = '%s' WHERE `id` = '%i'", status, MatchID);
   SQL_Query(database, query);
 }
 
@@ -19,7 +18,7 @@ stock UpdateMatchStatus(Handle:database, int match, char[] status)
  * @param  Database			timer handle
  * @param  MatchID			integer
  * @param  SteamID			string
- * @param  Status			string message
+ * @param  Status			  string message
  * @noreturn
  *********************************************************/
 stock UpdatePlayerStatus(Handle:database, int match, const char[] steam_id, char[] status)

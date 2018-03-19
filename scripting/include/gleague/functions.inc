@@ -260,19 +260,20 @@ stock SetKnifeOnly(client, bool:equip=true)
 
 public StartKnifeRound()
 {   
-    bool_HasKnifeRoundStarted = true;
-    UpdateMatchStatus(db, MatchID, "knife");
+  bool_HasKnifeRoundStarted = true;
 
-    for (int i = 1; i <= PLAYERSCOUNT; i++){
-      if (IsClientInGame(i) && GetClientTeam(i) > 1){
-        SetKnifeOnly(i);
-      }
+
+  if(DEBUG){PrintToServer("[DB] > UpdateMatchStatus > knife");} //Debug info
+  UpdateMatchStatus(db, "knife");
+
+  for (int i = 1; i <= PLAYERSCOUNT; i++){
+    if (IsClientInGame(i) && GetClientTeam(i) > 1){
+      SetKnifeOnly(i);
     }
+  }
 
-    UpdateMatchStatus(db, MatchID, "knife");
-
-    PrintToChatAll(" \x01[GLeague.io] > \x01\x0B\x04 %t", "KnifeRoundStarts");
-    if(DEBUG){PrintToServer("[Knife round] initialized");} //Debug info
+  PrintToChatAll(" \x01[GLeague.io] > \x01\x0B\x04 %t", "KnifeRoundStarts");
+  if(DEBUG){PrintToServer("[Knife round] initialized");} //Debug info
 }
 
 /*********************************************************
@@ -396,7 +397,9 @@ public StartPendingStaySwitch()
   HookEvent("player_say", Event_Player_Say);
   PrintToChatAll(" \x01[GLeague.io] > \x01\x0B\x04 %t", "WaitingForStaySwitch", Player_Name[int_ClientDecisionSelector]);
   
-  UpdateMatchStatus(db, MatchID, "stay/switch");
+
+  if(DEBUG){PrintToServer("[DB] > UpdateMatchStatus > stay/switch");} //Debug info
+  UpdateMatchStatus(db, "stay/switch");
 }
 
 public StartPreLiveRestarts()
@@ -414,9 +417,11 @@ public StartPreLiveRestarts()
 
 public StartLive()
 {
-    PrintToChatAll(" \x01[GLeague.io] > \x01\x0B\x04 %t", "MatchLive");
-    bool_MatchLive = true;
-    UpdateMatchStatus(db, MatchID, "live");
+  PrintToChatAll(" \x01[GLeague.io] > \x01\x0B\x04 %t", "MatchLive");
+  bool_MatchLive = true;
+
+  if(DEBUG){PrintToServer("[DB] > UpdateMatchStatus > live");} //Debug info
+  UpdateMatchStatus(db, "live");
 }
 
 public SetStayDecision()

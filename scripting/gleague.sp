@@ -6,13 +6,13 @@
 #define STEAMID_SIZE 32
 #define NICKNAME_SIZE 32
 
+/* debug */
+bool DEBUG = true;
+
 /* include assist scripts */
 #include <sourcemod>
 #include <cstrike>
 #include <sdktools>
-
-/* debug */
-bool DEBUG = true;
 
 /* database handler */
 Handle db = INVALID_HANDLE;
@@ -24,7 +24,7 @@ char Match_SteamID[2][STEAMID_SIZE];
 char Player_SteamID[10][STEAMID_SIZE];
 char Player_Name[10][NICKNAME_SIZE];
 bool Player_Connected[10] = false;
-int Players_Indexes[10];
+int Players_Indexes[10];  
 int Players_Connected = 0;
 int Players_TeamID[10];
 int Players_BelongsToTeam[2][10];
@@ -97,7 +97,9 @@ public OnPluginStart()
 
   if(DEBUG){ShowPlayersSteamIDs(Match_SteamID);} //Debug info
 
-  UpdateMatchStatus(db, MatchID, "ready");
+  if(DEBUG){PrintToServer("[DB] > UpdateMatchStatus > ready");} //Debug info
+  UpdateMatchStatus(db, "ready");
+
 
 }
 
@@ -277,7 +279,7 @@ public Event_Round_End(Handle:event, const String:name[], bool:dontBroadcast)
     PrintToChatAll(" \x01[GLeague.io] > \x01\x0B\x04 %t", "WinKnifeRound", Winner_TeamName);
 
     ChangeState(MatchState_WaitingForKnifeRoundDecision);
-    SetWarmupTime(7);
+    SetWarmupTime(60);
     CreateTimer(3.0, StartWarmup);
   }
 }

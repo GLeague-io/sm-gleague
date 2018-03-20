@@ -2,7 +2,7 @@
 
 #define PLAYERSCOUNT 2
 #define DEFAULT_LANGUAGE 22
-#define VERSION "0.0.3prealpha"
+#define VERSION "0.0.4prealpha"
 #define STEAMID_SIZE 32
 #define NICKNAME_SIZE 32
 

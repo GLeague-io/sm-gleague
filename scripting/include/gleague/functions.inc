@@ -37,7 +37,7 @@ stock SetMatchID()
  * @param  MatchID			integer
  * @return PlayersSteamIDs 	strings array
  *********************************************************/
-stock String:GetMatchSteamIDs()
+stock String:SetMatchSteamIDs()
 {
   DBResultSet teamsQuery, playersQuery;
   char query[256], player_steam_id[32];

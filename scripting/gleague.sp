@@ -85,6 +85,7 @@ public OnPluginStart()
   HookEvent("player_connect_full", Event_Player_Full_Connect, EventHookMode_Post);
   HookEvent("player_changename", Event_Player_Name);
   HookEvent("player_team", Event_Player_Team);
+  AddCommandListener(Command_JoinTeam, "jointeam");
 
   /* Round event hooks */
   HookEvent("round_start", Event_Round_Start);
@@ -226,6 +227,11 @@ public Event_Player_Team(Handle:event, const String:name[], bool:dontBroadcast)
     WritePackCell(Datapack, client);
     WritePackCell(Datapack, Needle_TeamID);
   }
+}
+
+public Action Command_JoinTeam(int client, const char[] command, int argc)
+{
+  return Plugin_Stop;
 }
 
 /*********************************************************

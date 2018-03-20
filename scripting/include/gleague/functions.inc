@@ -77,6 +77,33 @@ stock String:SetMatchSteamIDs()
   return Match_SteamID;
 }
 
+stock String:SetTeamNames()
+{
+  DBResultSet teamsQuery;
+  int team_id;
+  char query[256], team_name[50];
+
+  Format(query,sizeof(query), "SELECT `team_id`, `team_name` FROM `teams` WHERE `match_id` = '%i'", MatchID);
+  teamsQuery = SQL_Query(db, query);
+
+  if(teamsQuery == null){
+    SetFailState("Can't fetch team names from `teams` where `match_id` = %i", MatchID);
+  }
+
+  for(int i = 1; i <= 2; i++){
+    if(!SQL_FetchRow(teamsQuery)){
+      SetFailState("Can't fetch row %i from `teams`", i);
+    }
+
+    team_id = SQL_FetchInt(teamsQuery,0);
+    if(!SQL_FetchString(teamsQuery, 1, team_name, sizeof(team_name))){
+      SetFailState("Can't fetch String `team_name` from `teams` where `match_id` = '%i'", MatchID);    
+    }
+    
+    SetConVarString(cvar_team_name[team_id - 2], team_name);
+  }
+}
+
 /*********************************************************
  *  find steam id in global list of players steam ids
  * 

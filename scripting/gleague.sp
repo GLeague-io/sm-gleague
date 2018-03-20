@@ -95,6 +95,7 @@ public OnPluginStart()
   MySQL_Connect();
   SetMatchID();
   SetMatchSteamIDs();
+  SetTeamNames();
 
   if(DEBUG){ShowPlayersSteamIDs(Match_SteamID);} //Debug info
 

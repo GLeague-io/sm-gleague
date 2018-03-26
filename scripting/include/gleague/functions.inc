@@ -470,3 +470,15 @@ public GetAlivePlayersPerTeam(int team)
 
   return alive;
 }
+
+public GetHealthCountPerTeam(int team)
+{
+  int health = 0;
+  for(int i = 1; i <= 10; i++){
+    if(IsClientInGame(i) && GetClientTeam(i) == team && IsPlayerAlive(i)){
+      health += GetClientHealth(i);
+    }
+  }
+
+  return health;
+}

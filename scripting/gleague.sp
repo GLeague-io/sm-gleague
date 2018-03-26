@@ -2,7 +2,7 @@
 
 #define PLAYERSCOUNT 4
 #define DEFAULT_LANGUAGE 22
-#define VERSION "0.0.4prealpha"
+#define VERSION "0.0.5prealpha"
 #define STEAMID_SIZE 32
 #define NICKNAME_SIZE 32
 
@@ -288,7 +288,6 @@ public Event_Round_End(Handle:event, const String:name[], bool:dontBroadcast)
     healthT = GetHealthPointsPerTeam(2);
 
     if(aliveCT > 0 && aliveT > 0){
-
       if(aliveCT > aliveT) { Winner = 3; }
       if(aliveCT < aliveT) { Winner = 2; }
 
@@ -298,7 +297,6 @@ public Event_Round_End(Handle:event, const String:name[], bool:dontBroadcast)
         if(healthCT == healthT) { Winner = 3; }
       }
     }
-
 
     PrintToChatAll("Alive. CT: %i T: %i | Health. CT: %i T: %i", aliveCT, aliveT, healthCT, healthT);
 

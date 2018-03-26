@@ -458,3 +458,15 @@ public SetStayDecision()
     bool_HasKnifeRoundStarted = false;
     ChangeState(MatchState_GoingLive);
 }
+
+public GetAlivePlayersPerTeam(int team)
+{
+  int alive = 0;
+  for(int i = 1; i <= 10; i++){
+    if(IsClientInGame(i) && GetClientTeam(i) == team && IsPlayerAlive(i)){
+      alive++;
+    }
+  }
+
+  return alive;
+}

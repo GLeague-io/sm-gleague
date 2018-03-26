@@ -1,6 +1,6 @@
 #pragma semicolon 1
 
-#define PLAYERSCOUNT 2
+#define PLAYERSCOUNT 4
 #define DEFAULT_LANGUAGE 22
 #define VERSION "0.0.4prealpha"
 #define STEAMID_SIZE 32
@@ -20,7 +20,7 @@ Handle db = INVALID_HANDLE;
 int MatchID = -1;
 
 /* players data storage */
-char Match_SteamID[2][STEAMID_SIZE];
+char Match_SteamID[4][STEAMID_SIZE];
 char Player_SteamID[10][STEAMID_SIZE];
 char Player_Name[10][NICKNAME_SIZE];
 bool Player_Connected[10] = false;
@@ -272,13 +272,26 @@ public Action Event_Round_Start(Event event, const char[] name, bool dontBroadca
 public Event_Round_End(Handle:event, const String:name[], bool:dontBroadcast)
 {
   int Winner = GetEventInt(event, "winner");
+  int aliveCT = 0;
+  int aliveT = 0;
   char Winner_TeamName[32];
 
   if(Winner < 2) {return;}
 
-  GetConVarString(cvar_team_name[Winner-2], Winner_TeamName, sizeof(Winner_TeamName));
-
   if(enum_MatchState == MatchState_KnifeRound && bool_HasKnifeRoundStarted){
+
+    aliveCT = GetAlivePlayersPerTeam(3);
+    aliveT = GetAlivePlayersPerTeam(2);
+
+    if(aliveCT > 0 && aliveT > 0){
+      if(aliveCT > aliveT) { Winner = 3; }
+      if(aliveCT < aliveT) { Winner = 2; }
+
+      if(aliveCT == aliveT) { Winner = 3; }
+    }
+
+    GetConVarString(cvar_team_name[Winner-2], Winner_TeamName, sizeof(Winner_TeamName));
+
     bool_HasKnifeRoundStarted = false;
     bool_PendingSwitchDecision = true;
     int_ClientDecisionSelector = Players_BelongsToTeam[Winner-2][0];

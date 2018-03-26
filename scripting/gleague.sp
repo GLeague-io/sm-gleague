@@ -284,8 +284,8 @@ public Event_Round_End(Handle:event, const String:name[], bool:dontBroadcast)
 
     aliveCT = GetAlivePlayersPerTeam(3);
     aliveT = GetAlivePlayersPerTeam(2);
-    healthCT = GetHealthCountPerTeam(3);
-    healthT = GetHealthCountPerTeam(2);
+    healthCT = GetHealthPointsPerTeam(3);
+    healthT = GetHealthPointsPerTeam(2);
 
     if(aliveCT > 0 && aliveT > 0){
 

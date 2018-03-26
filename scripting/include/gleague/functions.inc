@@ -471,7 +471,7 @@ public GetAlivePlayersPerTeam(int team)
   return alive;
 }
 
-public GetHealthCountPerTeam(int team)
+public GetHealthPointsPerTeam(int team)
 {
   int health = 0;
   for(int i = 1; i <= 10; i++){
